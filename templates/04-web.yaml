@@ -606,7 +606,7 @@ Resources:
                   } 
                   $CFG = new stdClass;
                   // TODO: Change line 609 to mySQL
-                  $CFG->dbtype = 'mysql';
+                  $CFG->dbtype = 'mysqli';
                   $CFG->dblibrary = 'native';
                   $CFG->dbhost = '${DatabaseClusterEndpointAddress}';
                   $CFG->dbname = '${DatabaseName}';
