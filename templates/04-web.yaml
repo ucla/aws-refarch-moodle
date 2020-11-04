@@ -472,13 +472,15 @@ Resources:
             - install_cacheclient
             - install_opcache
             - start_webserver
+
+        # Modify line 482 -483 and ensure download mySQL and the packages php-mysql    
         install_webserver:
           files:
             /tmp/create_site_conf.sh:
               content: !Sub |
                 #!/bin/bash -xe
-                amazon-linux-extras install -y php7.3 postgresql9.6 
-                yum install -y awslogs httpd php-pgsql php-gd php-soap php-intl php-mbstring php-xmlrpc php-zip
+                amazon-linux-extras install -y php7.3  
+                yum install -y awslogs httpd mysql php-gd php-soap php-intl php-mbstring php-xmlrpc php-zip
                 sed -i 's/memory_limit =.*/memory_limit = 2048M/' /etc/php.ini
                 if [ ! -f /etc/httpd/conf.d/moodle.conf ]; then                    
                    touch /etc/httpd/conf.d/moodle.conf
@@ -603,7 +605,8 @@ Resources:
                       $secret = $result['SecretString'];
                   } 
                   $CFG = new stdClass;
-                  $CFG->dbtype = 'pgsql';
+                  // TODO: Change line 609 to mySQL
+                  $CFG->dbtype = 'mysql';
                   $CFG->dblibrary = 'native';
                   $CFG->dbhost = '${DatabaseClusterEndpointAddress}';
                   $CFG->dbname = '${DatabaseName}';
