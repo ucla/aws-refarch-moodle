@@ -150,10 +150,10 @@ Resources:
       BackupRetentionPeriod: 30
       DatabaseName: !Ref DatabaseName
       DBSubnetGroupName: !Ref DataSubnetGroup
-      # TODO: change to aurora-mysql engine type
+      # TODO: change to MySQL engine type
       # and the DBClusterParameterGroupName accordingly
       Engine: aurora-mysql
-      DBClusterParameterGroupName: default.aurora-mysql
+      DBClusterParameterGroupName: default.MySQL
       KmsKeyId:
         !If [ UseAWS-ManagedCMK, !Ref 'AWS::NoValue', !Ref DatabaseCmk ]
       MasterUsername: !Join ['', ['{{resolve:secretsmanager:', !Ref MyRDSInstanceSecretArn, ':SecretString:username}}' ]]
@@ -174,7 +174,7 @@ Resources:
       DBClusterIdentifier: !Ref DatabaseCluster
       DBInstanceClass: !Ref DatabaseInstanceType
       DBSubnetGroupName: !Ref DataSubnetGroup
-      # TODO: change to aurora-mysql engine type
+      # TODO: change to MySQL engine type
       Engine: aurora-mysql
       Tags:
         - Key: Name
@@ -188,7 +188,7 @@ Resources:
       DBClusterIdentifier: !Ref DatabaseCluster
       DBInstanceClass: !Ref DatabaseInstanceType
       DBSubnetGroupName: !Ref DataSubnetGroup
-      # TODO: change to aurora-mysql engine type
+      # TODO: change to MySQL engine type
       Engine: aurora-mysql
       Tags:
         - Key: Name
