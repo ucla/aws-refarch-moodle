@@ -152,8 +152,8 @@ Resources:
       DBSubnetGroupName: !Ref DataSubnetGroup
       # TODO: change to MySQL engine type
       # and the DBClusterParameterGroupName accordingly
-      Engine: aurora-mysql
-      DBClusterParameterGroupName: default.aurora-mysql5.7
+      Engine: MariaDB
+      DBClusterParameterGroupName: default.mariadb
       KmsKeyId:
         !If [ UseAWS-ManagedCMK, !Ref 'AWS::NoValue', !Ref DatabaseCmk ]
       MasterUsername: !Join ['', ['{{resolve:secretsmanager:', !Ref MyRDSInstanceSecretArn, ':SecretString:username}}' ]]
@@ -175,7 +175,7 @@ Resources:
       DBInstanceClass: !Ref DatabaseInstanceType
       DBSubnetGroupName: !Ref DataSubnetGroup
       # TODO: change to MySQL engine type
-      Engine: aurora-mysql
+      Engine: MariaDB
       Tags:
         - Key: Name
           Value: !Join [ '', [ 'Moodle / ', !Ref 'AWS::StackName' ] ]
@@ -189,7 +189,7 @@ Resources:
       DBInstanceClass: !Ref DatabaseInstanceType
       DBSubnetGroupName: !Ref DataSubnetGroup
       # TODO: change to MySQL engine type
-      Engine: aurora-mysql
+      Engine: MariaDB
       Tags:
         - Key: Name
           Value: !Join [ '', [ 'Moodle / ', !Ref 'AWS::StackName' ] ]

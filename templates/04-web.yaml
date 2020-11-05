@@ -480,7 +480,7 @@ Resources:
               content: !Sub |
                 #!/bin/bash -xe
                 amazon-linux-extras install -y php7.3  
-                yum install -y awslogs httpd mysql php-gd php-soap php-intl php-mbstring php-xmlrpc php-zip
+                yum install -y awslogs httpd MariaDB-client MariaDB-shared php-mysql php-gd php-soap php-intl php-mbstring php-xmlrpc php-zip
                 sed -i 's/memory_limit =.*/memory_limit = 2048M/' /etc/php.ini
                 if [ ! -f /etc/httpd/conf.d/moodle.conf ]; then                    
                    touch /etc/httpd/conf.d/moodle.conf
