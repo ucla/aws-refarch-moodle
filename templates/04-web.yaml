@@ -605,7 +605,6 @@ Resources:
                       $secret = $result['SecretString'];
                   } 
                   $CFG = new stdClass;
-                  // TODO: Change line 609 to mySQL
                   $CFG->dbtype = 'mysqli';
                   $CFG->dblibrary = 'native';
                   $CFG->dbhost = '${DatabaseClusterEndpointAddress}';

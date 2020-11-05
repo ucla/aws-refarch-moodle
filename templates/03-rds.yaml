@@ -158,7 +158,7 @@ Resources:
         !If [ UseAWS-ManagedCMK, !Ref 'AWS::NoValue', !Ref DatabaseCmk ]
       MasterUsername: !Join ['', ['{{resolve:secretsmanager:', !Ref MyRDSInstanceSecretArn, ':SecretString:username}}' ]]
       MasterUserPassword: !Join ['', ['{{resolve:secretsmanager:', !Ref MyRDSInstanceSecretArn, ':SecretString:password}}' ]]
-      Port: 5432
+      Port: 3306
       StorageEncrypted: !Ref DatabaseEncrpytedBoolean
       Tags:
         - Key: Name
