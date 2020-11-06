@@ -153,7 +153,7 @@ Resources:
       # TODO: change to MySQL engine type
       # and the DBClusterParameterGroupName accordingly
       Engine: MariaDB
-      DBClusterParameterGroupName: default.mariadb
+      DBClusterParameterGroupName: mariadb10.2
       KmsKeyId:
         !If [ UseAWS-ManagedCMK, !Ref 'AWS::NoValue', !Ref DatabaseCmk ]
       MasterUsername: !Join ['', ['{{resolve:secretsmanager:', !Ref MyRDSInstanceSecretArn, ':SecretString:username}}' ]]
