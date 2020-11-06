@@ -150,11 +150,8 @@ Resources:
       BackupRetentionPeriod: 30
       DatabaseName: !Ref DatabaseName
       DBSubnetGroupName: !Ref DataSubnetGroup
-      # TODO: change to MySQL engine type
-      # and the DBClusterParameterGroupName accordingly
-      Engine: MariaDB
-      EnginVersion: "10.2.21"
-      #DBClusterParameterGroupName: default.mariadb10.2.21
+      Engine: aurora-mysql
+      DBClusterParameterGroupName: default.aurora-mysql5.7
       KmsKeyId:
         !If [ UseAWS-ManagedCMK, !Ref 'AWS::NoValue', !Ref DatabaseCmk ]
       MasterUsername: !Join ['', ['{{resolve:secretsmanager:', !Ref MyRDSInstanceSecretArn, ':SecretString:username}}' ]]
@@ -175,8 +172,7 @@ Resources:
       DBClusterIdentifier: !Ref DatabaseCluster
       DBInstanceClass: !Ref DatabaseInstanceType
       DBSubnetGroupName: !Ref DataSubnetGroup
-      # TODO: change to MySQL engine type
-      Engine: MariaDB
+      Engine: aurora-mysql
       Tags:
         - Key: Name
           Value: !Join [ '', [ 'Moodle / ', !Ref 'AWS::StackName' ] ]
@@ -189,8 +185,7 @@ Resources:
       DBClusterIdentifier: !Ref DatabaseCluster
       DBInstanceClass: !Ref DatabaseInstanceType
       DBSubnetGroupName: !Ref DataSubnetGroup
-      # TODO: change to MySQL engine type
-      Engine: MariaDB
+      Engine: aurora-mysql
       Tags:
         - Key: Name
           Value: !Join [ '', [ 'Moodle / ', !Ref 'AWS::StackName' ] ]
@@ -237,5 +232,3 @@ Outputs:
     Value: !Ref DataSubnetGroup
   DatabaseClusterEndpointAddress:
     Value: !GetAtt DatabaseCluster.Endpoint.Address
-  
-
