@@ -472,15 +472,14 @@ Resources:
             - install_cacheclient
             - install_opcache
             - start_webserver
-
-        # Modify line 482 -483 and ensure download mySQL and the packages php-mysql    
+   
         install_webserver:
           files:
             /tmp/create_site_conf.sh:
               content: !Sub |
                 #!/bin/bash -xe
                 amazon-linux-extras install -y php7.3  
-                yum install -y awslogs httpd mysql php-mysql php-gd php-soap php-intl php-mbstring php-xmlrpc php-zip
+                yum install -y awslogs httpd mysql php-gd php-soap php-intl php-mbstring php-xmlrpc php-zip
                 sed -i 's/memory_limit =.*/memory_limit = 2048M/' /etc/php.ini
                 if [ ! -f /etc/httpd/conf.d/moodle.conf ]; then                    
                    touch /etc/httpd/conf.d/moodle.conf
@@ -662,7 +661,7 @@ Resources:
             /tmp/install_moodle.sh:
               content:  !Sub |
                 #!/bin/bash -xe
-                wget -O /tmp/moodle.tgz https://download.moodle.org/download.php/direct/stable39/moodle-latest-39.tgz
+                wget -O /tmp/moodle.tgz https://download.moodle.org/download.php/direct/stable38/moodle-3.8.3.tgz
                 tar -xvzf /tmp/moodle.tgz --strip-components=1 -C /var/www/moodle/html/
                 wget -O /var/www/moodle/html/lib/aws.phar https://docs.aws.amazon.com/aws-sdk-php/v3/download/aws.phar
                 cp /tmp/config.php /var/www/moodle/html/config.php
