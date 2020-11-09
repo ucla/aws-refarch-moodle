@@ -647,10 +647,10 @@ Resources:
                     $CFG->session_memcached_lock_expire = 7100;
                     $CFG->session_memcached_lock_retry_sleep = 150;
                   }
-                  //@error_reporting(E_ALL | E_STRICT);   // NOT FOR PRODUCTION SERVERS!
-                  //@ini_set('display_errors', '1');         // NOT FOR PRODUCTION SERVERS!
-                  //$CFG->debug = (E_ALL | E_STRICT);   // === DEBUG_DEVELOPER - NOT FOR PRODUCTION SERVERS!
-                  //$CFG->debugdisplay = 1; 
+                  @error_reporting(E_ALL | E_STRICT);   // NOT FOR PRODUCTION SERVERS!
+                  @ini_set('display_errors', '1');         // NOT FOR PRODUCTION SERVERS!
+                  $CFG->debug = (E_ALL | E_STRICT);   // === DEBUG_DEVELOPER - NOT FOR PRODUCTION SERVERS!
+                  $CFG->debugdisplay = 1; 
                   require_once(__DIR__ . '/lib/setup.php');
                   // END OF CONFIG //
                   ?>
