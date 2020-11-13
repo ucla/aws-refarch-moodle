@@ -22,9 +22,9 @@ Metadata:
       DatabaseEncrpytedBoolean:
         default: Encrypted DB Cluster
       DatabaseCmk:
-        default: AWS KMS Customer Master Key (CMK) to encrypt DB 
+        default: AWS KMS Customer Master Key (CMK) to encrypt DB
       DatabaseInstanceType:
-        default: DB Instance Class 
+        default: DB Instance Class
       # DatabaseMasterUsername:
       #   default: DB Master Username
       # DatabaseMasterPassword:
@@ -52,14 +52,14 @@ Parameters:
     Type: String
   DatabaseInstanceType:
     AllowedValues:
-      - db.r4.large
-      - db.r4.xlarge
-      - db.r4.2xlarge
-      - db.r4.4xlarge
-      - db.r4.8xlarge
-      - db.r4.16xlarge
+      - db.r5.large
+      - db.r5.xlarge
+      - db.r5.2xlarge
+      - db.r5.4xlarge
+      - db.r5.8xlarge
+      - db.r5.16xlarge
     ConstraintDescription: Must be a valid RDS instance class.
-    Default: db.r4.large
+    Default: db.r5.large
     Description: The Amazon RDS database instance class.
     Type: String
   # DatabaseMasterUsername:
@@ -71,7 +71,7 @@ Parameters:
   #   Type: String
   # DatabaseMasterPassword:
   #   AllowedPattern: ^([a-z0-9A-Z`~!#$%^&*()_+,\\-])*$
-  #   ConstraintDescription: Must be letters (upper or lower), numbers, and these special characters '_'`~!#$%^&*()_+,-    
+  #   ConstraintDescription: Must be letters (upper or lower), numbers, and these special characters '_'`~!#$%^&*()_+,-
   #   Description: The Amazon RDS master password.
   #   MaxLength: 41
   #   MinLength: 8
@@ -95,7 +95,7 @@ Parameters:
     - 6
     Default: 3
     Description: Number of subnets. This must match your selections in the list of subnets below.
-    Type: String 
+    Type: String
   Subnet:
     Description: Select existing subnets. The number selected must match the number of subnets above. Subnets selected must be in separate AZs.
     Type: List<AWS::EC2::Subnet::Id>

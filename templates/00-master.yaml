@@ -88,7 +88,7 @@ Metadata:
       CloudFrontAcmCertificate:
         default: CloudFront Certificate ARN
       DatabaseCmk:
-        default: AWS KMS CMK for RDS 
+        default: AWS KMS CMK for RDS
       DatabaseEncrpytedBoolean:
         default: Encrypted DB Cluster
       DatabaseInstanceType:
@@ -188,97 +188,16 @@ Metadata:
 Parameters:
   BastionInstanceType:
     AllowedValues:
-    - t2.nano 
-    - t2.micro 
-    - t2.small 
-    - t2.medium 
-    - t2.large 
-    - t2.xlarge 
-    - t2.2xlarge 
-    - m3.medium 
-    - m3.large 
-    - m3.xlarge 
-    - m3.2xlarge 
-    - m4.large 
-    - m4.xlarge 
-    - m4.2xlarge 
-    - m4.4xlarge 
-    - m4.10xlarge 
-    - m4.16xlarge 
-    - m5.large 
-    - m5.xlarge 
-    - m5.2xlarge 
-    - m5.4xlarge 
-    - m5.12xlarge 
-    - m5.24xlarge 
-    - c3.large 
-    - c3.xlarge 
-    - c3.2xlarge 
-    - c3.4xlarge 
-    - c3.8xlarge 
-    - c4.large 
-    - c4.xlarge 
-    - c4.2xlarge 
-    - c4.4xlarge 
-    - c4.8xlarge 
-    - c5.large 
-    - c5.xlarge 
-    - c5.2xlarge 
-    - c5.4xlarge 
-    - c5.9xlarge 
-    - c5.18xlarge
-    - r3.large 
-    - r3.xlarge 
-    - r3.2xlarge 
-    - r3.4xlarge 
-    - r3.8xlarge 
-    - r4.large 
-    - r4.xlarge 
-    - r4.2xlarge 
-    - r4.4xlarge 
-    - r4.8xlarge 
-    - r4.16xlarge 
-    - x1.16xlarge 
-    - x1.32xlarge 
-    - x1e.xlarge 
-    - x1e.2xlarge 
-    - x1e.4xlarge 
-    - x1e.8xlarge 
-    - x1e.16xlarge 
-    - x1e.32xlarge
-    - d2.xlarge 
-    - d2.2xlarge 
-    - d2.4xlarge 
-    - d2.8xlarge 
-    - h1.2xlarge 
-    - h1.4xlarge 
-    - h1.8xlarge 
-    - h1.16xlarge 
-    - i2.xlarge 
-    - i2.2xlarge 
-    - i2.4xlarge 
-    - i2.8xlarge 
-    - i3.large 
-    - i3.xlarge 
-    - i3.2xlarge 
-    - i3.4xlarge 
-    - i3.8xlarge 
-    - i3.16xlarge
-    - f1.2xlarge 
-    - f1.16xlarge 
-    - g2.2xlarge 
-    - g2.8xlarge 
-    - g3.4xlarge 
-    - g3.8xlarge 
-    - g3.16xlarge 
-    - p2.xlarge 
-    - p2.8xlarge 
-    - p2.16xlarge 
-    - p3.2xlarge 
-    - p3.8xlarge 
-    - p3.16xlarge
+      - t3.nano
+      - t4g.nano
+      - t4g.micro
+      - t4g.small
+      - t4g.medium
+      - t4g.large
+      - t4g.xlarge
+      - t4g.2xlarge
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
-    Default: t2.nano
+    Default: t4g.nano
     Description: Bastion EC2 instance type.
     Type: String
   PublicAlbAcmCertificate:
@@ -301,14 +220,14 @@ Parameters:
     Type: String
   DatabaseInstanceType:
     AllowedValues:
-      - db.r4.large
-      - db.r4.xlarge
-      - db.r4.2xlarge
-      - db.r4.4xlarge
-      - db.r4.8xlarge
-      - db.r4.16xlarge
+      - db.r5.large
+      - db.r5.xlarge
+      - db.r5.2xlarge
+      - db.r5.4xlarge
+      - db.r5.8xlarge
+      - db.r5.16xlarge
     ConstraintDescription: Must be a valid RDS instance class.
-    Default: db.r4.large
+    Default: db.r5.large
     Description: The Amazon RDS database instance class.
     Type: String
   DatabaseMasterUsername:
@@ -360,97 +279,63 @@ Parameters:
     Type: Number
   EfsGrowthInstanceType:
     AllowedValues:
-    - t2.nano 
-    - t2.micro 
-    - t2.small 
-    - t2.medium 
-    - t2.large 
-    - t2.xlarge 
-    - t2.2xlarge 
-    - m3.medium 
-    - m3.large 
-    - m3.xlarge 
-    - m3.2xlarge 
-    - m4.large 
-    - m4.xlarge 
-    - m4.2xlarge 
-    - m4.4xlarge 
-    - m4.10xlarge 
-    - m4.16xlarge 
-    - m5.large 
-    - m5.xlarge 
-    - m5.2xlarge 
-    - m5.4xlarge 
-    - m5.12xlarge 
-    - m5.24xlarge 
-    - c3.large 
-    - c3.xlarge 
-    - c3.2xlarge 
-    - c3.4xlarge 
-    - c3.8xlarge 
-    - c4.large 
-    - c4.xlarge 
-    - c4.2xlarge 
-    - c4.4xlarge 
-    - c4.8xlarge 
-    - c5.large 
-    - c5.xlarge 
-    - c5.2xlarge 
-    - c5.4xlarge 
-    - c5.9xlarge 
+    - t3.nano
+    - t3.micro
+    - t3.small
+    - t3.medium
+    - t3.large
+    - t3.xlarge
+    - t3.2xlarge
+    - m5.large
+    - m5.xlarge
+    - m5.2xlarge
+    - m5.4xlarge
+    - m5.12xlarge
+    - m5.24xlarge
+    - c5.large
+    - c5.xlarge
+    - c5.2xlarge
+    - c5.4xlarge
+    - c5.9xlarge
     - c5.18xlarge
-    - r3.large 
-    - r3.xlarge 
-    - r3.2xlarge 
-    - r3.4xlarge 
-    - r3.8xlarge 
-    - r4.large 
-    - r4.xlarge 
-    - r4.2xlarge 
-    - r4.4xlarge 
-    - r4.8xlarge 
-    - r4.16xlarge 
-    - x1.16xlarge 
-    - x1.32xlarge 
-    - x1e.xlarge 
-    - x1e.2xlarge 
-    - x1e.4xlarge 
-    - x1e.8xlarge 
-    - x1e.16xlarge 
+    - r5.large
+    - r5.xlarge
+    - r5.2xlarge
+    - r5.4xlarge
+    - r5.8xlarge
+    - r5.16xlarge
+    - x1.16xlarge
+    - x1.32xlarge
+    - x1e.xlarge
+    - x1e.2xlarge
+    - x1e.4xlarge
+    - x1e.8xlarge
+    - x1e.16xlarge
     - x1e.32xlarge
-    - d2.xlarge 
-    - d2.2xlarge 
-    - d2.4xlarge 
-    - d2.8xlarge 
-    - h1.2xlarge 
-    - h1.4xlarge 
-    - h1.8xlarge 
-    - h1.16xlarge 
-    - i2.xlarge 
-    - i2.2xlarge 
-    - i2.4xlarge 
-    - i2.8xlarge 
-    - i3.large 
-    - i3.xlarge 
-    - i3.2xlarge 
-    - i3.4xlarge 
-    - i3.8xlarge 
+    - d2.xlarge
+    - d2.2xlarge
+    - d2.4xlarge
+    - d2.8xlarge
+    - h1.2xlarge
+    - h1.4xlarge
+    - h1.8xlarge
+    - h1.16xlarge
+    - i3.large
+    - i3.xlarge
+    - i3.2xlarge
+    - i3.4xlarge
+    - i3.8xlarge
     - i3.16xlarge
-    - f1.2xlarge 
-    - f1.16xlarge 
-    - g2.2xlarge 
-    - g2.8xlarge 
-    - g3.4xlarge 
-    - g3.8xlarge 
-    - g3.16xlarge 
-    - p2.xlarge 
-    - p2.8xlarge 
-    - p2.16xlarge 
-    - p3.2xlarge 
-    - p3.8xlarge 
-    - p3.16xlarge
+    - f1.2xlarge
+    - f1.16xlarge
+    - g4.4xlarge
+    - g4.8xlarge
+    - g4.16xlarge
+    - p4.2xlarge
+    - p4.8xlarge
+    - p4.16xlarge
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
-    Default: r4.large
+    Default: r5.large
     Description: The Amazon EC2 instance type that adds data to the file system.
     Type: String
   UseSessionCacheBoolean:
@@ -458,29 +343,25 @@ Parameters:
       - true
       - false
     Default: false
-    Description: Specifies whether an ElastiCache Cache Cluster should be created for sessions. Do not create a session cache during he inital deploy. You should update the stack to use session cache after completing the installation wizard.
+    Description: Specifies whether an ElastiCache Cache Cluster should be created for sessions. Do not create a session cache during the inital deploy. You should update the stack to use session cache after completing the installation wizard.
     Type: String
   SessionCacheNodeType:
     AllowedValues:
-      - cache.t2.micro
-      - cache.t2.small
-      - cache.t2.medium
-      - cache.m4.large
-      - cache.m4.xlarge
-      - cache.m4.2xlarge
-      - cache.m4.4xlarge
-      - cache.m4.10xlarge
-      - cache.m3.medium
-      - cache.m3.large
-      - cache.m3.xlarge
-      - cache.m3.2xlarge
-      - cache.r3.large
-      - cache.r3.xlarge
-      - cache.r3.2xlarge
-      - cache.r3.4xlarge
-      - cache.r3.8xlarge
+      - cache.t3.micro
+      - cache.t3.small
+      - cache.t3.medium
+      - cache.m5.large
+      - cache.m5.xlarge
+      - cache.m5.2xlarge
+      - cache.m5.4xlarge
+      - cache.m5.10xlarge
+      - cache.r6g.large
+      - cache.r6g.xlarge
+      - cache.r6g.2xlarge
+      - cache.r6g.4xlarge
+      - cache.r6g.8xlarge
     ConstraintDescription: Must be a valid Amazon ElastiCache node type.
-    Default: cache.t2.micro
+    Default: cache.t3.medium
     Description: The Amazon ElastiCache cluster node type.
     Type: String
   UseApplicationCacheBoolean:
@@ -488,29 +369,25 @@ Parameters:
       - true
       - false
     Default: true
-    Description: Specifies whether an ElastiCache Cache Cluster should be created to cache application content.
+    Description: Specifies whether an ElastiCache Cache Cluster should be created to cache application content. Do not create a application cache during the inital deploy. You should update the stack to use application cache after completing the installation wizard.
     Type: String
   ApplicationCacheNodeType:
     AllowedValues:
-      - cache.t2.micro
-      - cache.t2.small
-      - cache.t2.medium
-      - cache.m4.large
-      - cache.m4.xlarge
-      - cache.m4.2xlarge
-      - cache.m4.4xlarge
-      - cache.m4.10xlarge
-      - cache.m3.medium
-      - cache.m3.large
-      - cache.m3.xlarge
-      - cache.m3.2xlarge
-      - cache.r3.large
-      - cache.r3.xlarge
-      - cache.r3.2xlarge
-      - cache.r3.4xlarge
-      - cache.r3.8xlarge
+      - cache.t3.micro
+      - cache.t3.small
+      - cache.t3.medium
+      - cache.m5.large
+      - cache.m5.xlarge
+      - cache.m5.2xlarge
+      - cache.m5.4xlarge
+      - cache.m5.10xlarge
+      - cache.r6g.large
+      - cache.r6g.xlarge
+      - cache.r6g.2xlarge
+      - cache.r6g.4xlarge
+      - cache.r6g.8xlarge
     ConstraintDescription: Must be a valid Amazon ElastiCache node type.
-    Default: cache.t2.micro
+    Default: cache.t3.medium
     Description: The Amazon ElastiCache cluster node type.
     Type: String
   EC2KeyName:
@@ -536,97 +413,55 @@ Parameters:
     Type: String
   WebInstanceType:
     AllowedValues:
-      - t2.nano 
-      - t2.micro 
-      - t2.small 
-      - t2.medium 
-      - t2.large 
-      - t2.xlarge 
-      - t2.2xlarge 
-      - m3.medium 
-      - m3.large 
-      - m3.xlarge 
-      - m3.2xlarge 
-      - m4.large 
-      - m4.xlarge 
-      - m4.2xlarge 
-      - m4.4xlarge 
-      - m4.10xlarge 
-      - m4.16xlarge 
-      - m5.large 
-      - m5.xlarge 
-      - m5.2xlarge 
-      - m5.4xlarge 
-      - m5.12xlarge 
-      - m5.24xlarge 
-      - c3.large 
-      - c3.xlarge 
-      - c3.2xlarge 
-      - c3.4xlarge 
-      - c3.8xlarge 
-      - c4.large 
-      - c4.xlarge 
-      - c4.2xlarge 
-      - c4.4xlarge 
-      - c4.8xlarge 
-      - c5.large 
-      - c5.xlarge 
-      - c5.2xlarge 
-      - c5.4xlarge 
-      - c5.9xlarge 
+      - t3.nano
+      - t3.micro
+      - t3.small
+      - t3.medium
+      - t3.large
+      - t3.xlarge
+      - t3.2xlarge
+      - m5.large
+      - m5.xlarge
+      - m5.2xlarge
+      - m5.4xlarge
+      - m5.12xlarge
+      - m5.24xlarge
+      - c5.large
+      - c5.xlarge
+      - c5.2xlarge
+      - c5.4xlarge
+      - c5.9xlarge
       - c5.18xlarge
-      - r3.large 
-      - r3.xlarge 
-      - r3.2xlarge 
-      - r3.4xlarge 
-      - r3.8xlarge 
-      - r4.large 
-      - r4.xlarge 
-      - r4.2xlarge 
-      - r4.4xlarge 
-      - r4.8xlarge 
-      - r4.16xlarge 
-      - x1.16xlarge 
-      - x1.32xlarge 
-      - x1e.xlarge 
-      - x1e.2xlarge 
-      - x1e.4xlarge 
-      - x1e.8xlarge 
-      - x1e.16xlarge 
-      - x1e.32xlarge
-      - d2.xlarge 
-      - d2.2xlarge 
-      - d2.4xlarge 
-      - d2.8xlarge 
-      - h1.2xlarge 
-      - h1.4xlarge 
-      - h1.8xlarge 
-      - h1.16xlarge 
-      - i2.xlarge 
-      - i2.2xlarge 
-      - i2.4xlarge 
-      - i2.8xlarge 
-      - i3.large 
-      - i3.xlarge 
-      - i3.2xlarge 
-      - i3.4xlarge 
-      - i3.8xlarge 
+      - r5.large
+      - r5.xlarge
+      - r5.2xlarge
+      - r5.4xlarge
+      - r5.8xlarge
+      - r5.16xlarge
+      - d2.xlarge
+      - d2.2xlarge
+      - d2.4xlarge
+      - d2.8xlarge
+      - h1.2xlarge
+      - h1.4xlarge
+      - h1.8xlarge
+      - h1.16xlarge
+      - i3.large
+      - i3.xlarge
+      - i3.2xlarge
+      - i3.4xlarge
+      - i3.8xlarge
       - i3.16xlarge
-      - f1.2xlarge 
-      - f1.16xlarge 
-      - g2.2xlarge 
-      - g2.8xlarge 
-      - g3.4xlarge 
-      - g3.8xlarge 
-      - g3.16xlarge 
-      - p2.xlarge 
-      - p2.8xlarge 
-      - p2.16xlarge 
-      - p3.2xlarge 
-      - p3.8xlarge 
-      - p3.16xlarge
+      - f1.2xlarge
+      - f1.16xlarge
+      - g4.4xlarge
+      - g4.8xlarge
+      - g4.16xlarge
+      - p4.2xlarge
+      - p4.8xlarge
+      - p4.16xlarge
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
-    Default: t2.large
+    Default: t3.large
     Description: The Amazon EC2 instance type for your web instances.
     Type: String
   HostedZoneName:
@@ -792,18 +627,18 @@ Parameters:
     Description: Specifies whether a record set should be created in Route 53 for your Moodle domain name.
     Type: String
 
-  
+
 Conditions:
-  DeployWithoutSessionCache: 
+  DeployWithoutSessionCache:
     !Equals [ false, !Ref UseSessionCacheBoolean ]
-  DeployWithSessionCache: 
+  DeployWithSessionCache:
     !Equals [ true, !Ref UseSessionCacheBoolean ]
-  DeployApplicationCache: 
+  DeployApplicationCache:
     !Equals [ true, !Ref UseApplicationCacheBoolean ]
-  DeployRoute53: 
+  DeployRoute53:
     !Equals [ true, !Ref UseRoute53Boolean ]
-  DeployCloudFront: 
-    !Equals [ true, !Ref UseCloudFrontBoolean ]   
+  DeployCloudFront:
+    !Equals [ true, !Ref UseCloudFrontBoolean ]
 
 Resources:
   MyRDSInstanceSecret:
@@ -950,7 +785,7 @@ Resources:
         SecurityGroup:
          !GetAtt [ securitygroups, Outputs.EfsSecurityGroup ]
         NumberOfSubnets:
-          !Ref NumberOfAZs  
+          !Ref NumberOfAZs
         PerformanceMode:
           !Ref EfsPerformanceMode
         Subnet:
@@ -981,7 +816,7 @@ Resources:
       Parameters:
         Subnet:
           !GetAtt [ vpc, Outputs.DataSubnet ]
-        ElastiCacheClusterName: 
+        ElastiCacheClusterName:
           !Sub '${AWS::StackName}application'
         ElastiCacheNodeType:
           !Ref ApplicationCacheNodeType
@@ -1078,7 +913,7 @@ Resources:
       TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/04-web.yaml
   cloudfront:
     Condition: DeployCloudFront
-    DependsOn: publicalb    
+    DependsOn: publicalb
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
@@ -1104,7 +939,7 @@ Resources:
         DomainName:
           !Ref DomainName
       TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/05-route53.yaml
-      
+
 Outputs:
   DnsName:
     Description: DNS name of the new load balancer for Moodle.

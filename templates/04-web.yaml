@@ -42,7 +42,7 @@ Metadata:
       DatabaseClusterEndpointAddress:
         default: DB Cluster Endpoint Address
       # DatabaseMasterUsername:
-      #   default: DB Master Username  
+      #   default: DB Master Username
       # DatabaseMasterPassword:
       #   default: DB Master Password
       DatabaseName:
@@ -124,7 +124,7 @@ Parameters:
     - 6
     Default: 2
     Description: Number of subnets. This must match your selections in the list of subnets below.
-    Type: String 
+    Type: String
   PublicAlbTargetGroupArn:
     Description: The public application load balancer target group arn.
     Type: String
@@ -156,97 +156,55 @@ Parameters:
     Type: String
   WebInstanceType:
     AllowedValues:
-    - t2.nano 
-    - t2.micro 
-    - t2.small 
-    - t2.medium 
-    - t2.large 
-    - t2.xlarge 
-    - t2.2xlarge 
-    - m3.medium 
-    - m3.large 
-    - m3.xlarge 
-    - m3.2xlarge 
-    - m4.large 
-    - m4.xlarge 
-    - m4.2xlarge 
-    - m4.4xlarge 
-    - m4.10xlarge 
-    - m4.16xlarge 
-    - m5.large 
-    - m5.xlarge 
-    - m5.2xlarge 
-    - m5.4xlarge 
-    - m5.12xlarge 
-    - m5.24xlarge 
-    - c3.large 
-    - c3.xlarge 
-    - c3.2xlarge 
-    - c3.4xlarge 
-    - c3.8xlarge 
-    - c4.large 
-    - c4.xlarge 
-    - c4.2xlarge 
-    - c4.4xlarge 
-    - c4.8xlarge 
-    - c5.large 
-    - c5.xlarge 
-    - c5.2xlarge 
-    - c5.4xlarge 
-    - c5.9xlarge 
-    - c5.18xlarge
-    - r3.large 
-    - r3.xlarge 
-    - r3.2xlarge 
-    - r3.4xlarge 
-    - r3.8xlarge 
-    - r4.large 
-    - r4.xlarge 
-    - r4.2xlarge 
-    - r4.4xlarge 
-    - r4.8xlarge 
-    - r4.16xlarge 
-    - x1.16xlarge 
-    - x1.32xlarge 
-    - x1e.xlarge 
-    - x1e.2xlarge 
-    - x1e.4xlarge 
-    - x1e.8xlarge 
-    - x1e.16xlarge 
-    - x1e.32xlarge
-    - d2.xlarge 
-    - d2.2xlarge 
-    - d2.4xlarge 
-    - d2.8xlarge 
-    - h1.2xlarge 
-    - h1.4xlarge 
-    - h1.8xlarge 
-    - h1.16xlarge 
-    - i2.xlarge 
-    - i2.2xlarge 
-    - i2.4xlarge 
-    - i2.8xlarge 
-    - i3.large 
-    - i3.xlarge 
-    - i3.2xlarge 
-    - i3.4xlarge 
-    - i3.8xlarge 
-    - i3.16xlarge
-    - f1.2xlarge 
-    - f1.16xlarge 
-    - g2.2xlarge 
-    - g2.8xlarge 
-    - g3.4xlarge 
-    - g3.8xlarge 
-    - g3.16xlarge 
-    - p2.xlarge 
-    - p2.8xlarge 
-    - p2.16xlarge 
-    - p3.2xlarge 
-    - p3.8xlarge 
-    - p3.16xlarge
+      - t3.nano
+      - t3.micro
+      - t3.small
+      - t3.medium
+      - t3.large
+      - t3.xlarge
+      - t3.2xlarge
+      - m5.large
+      - m5.xlarge
+      - m5.2xlarge
+      - m5.4xlarge
+      - m5.12xlarge
+      - m5.24xlarge
+      - c5.large
+      - c5.xlarge
+      - c5.2xlarge
+      - c5.4xlarge
+      - c5.9xlarge
+      - c5.18xlarge
+      - r5.large
+      - r5.xlarge
+      - r5.2xlarge
+      - r5.4xlarge
+      - r5.8xlarge
+      - r5.16xlarge
+      - d2.xlarge
+      - d2.2xlarge
+      - d2.4xlarge
+      - d2.8xlarge
+      - h1.2xlarge
+      - h1.4xlarge
+      - h1.8xlarge
+      - h1.16xlarge
+      - i3.large
+      - i3.xlarge
+      - i3.2xlarge
+      - i3.4xlarge
+      - i3.8xlarge
+      - i3.16xlarge
+      - f1.2xlarge
+      - f1.16xlarge
+      - g4.4xlarge
+      - g4.8xlarge
+      - g4.16xlarge
+      - p4.2xlarge
+      - p4.8xlarge
+      - p4.16xlarge
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
-    Default: t2.large
+    Default: t3.large
     Description: The Amazon EC2 instance type for your web instances.
     Type: String
   WebSecurityGroup:
@@ -309,7 +267,7 @@ Conditions:
   Subnet5: !Condition NumberOfSubnets6
   NoDomainName:
     !Equals [ '', !Ref DomainName ]
-    
+
 
 Resources:
   WebInstanceProfile:
@@ -364,10 +322,10 @@ Resources:
             - secretsmanager:GetSecretValue
             Resource:
             - !Ref MyRDSInstanceSecretArn
-  Logs: 
+  Logs:
       Type: AWS::Logs::LogGroup
       DeletionPolicy: Retain
-      Properties: 
+      Properties:
         RetentionInDays: 7
   WebAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
@@ -410,7 +368,7 @@ Resources:
       ResourceSignal:
         Count: !Ref WebAsgMin
         Timeout: PT15M
-        
+
   ScaleUpPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
@@ -434,7 +392,7 @@ Resources:
       - Name: AutoScalingGroupName
         Value: !Ref WebAutoScalingGroup
       ComparisonOperator: GreaterThanThreshold
-      MetricName: CPUUtilization   
+      MetricName: CPUUtilization
   ScaleDownPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
@@ -458,8 +416,8 @@ Resources:
       - Name: AutoScalingGroupName
         Value: !Ref WebAutoScalingGroup
       ComparisonOperator: LessThanThreshold
-      MetricName: CPUUtilization   
-     
+      MetricName: CPUUtilization
+
   WebLaunchConfiguration:
     Type: AWS::AutoScaling::LaunchConfiguration
     Metadata:
@@ -472,16 +430,16 @@ Resources:
             - install_cacheclient
             - install_opcache
             - start_webserver
-   
+
         install_webserver:
           files:
             /tmp/create_site_conf.sh:
               content: !Sub |
                 #!/bin/bash -xe
-                amazon-linux-extras install -y php7.3  
+                amazon-linux-extras install -y php7.3
                 yum install -y awslogs httpd mysql php-gd php-soap php-intl php-mbstring php-xmlrpc php-zip
                 sed -i 's/memory_limit =.*/memory_limit = 2048M/' /etc/php.ini
-                if [ ! -f /etc/httpd/conf.d/moodle.conf ]; then                    
+                if [ ! -f /etc/httpd/conf.d/moodle.conf ]; then
                    touch /etc/httpd/conf.d/moodle.conf
                    echo 'ServerName 127.0.0.1:80' >> /etc/httpd/conf.d/moodle.conf
                    echo 'DocumentRoot /var/www/moodle/html' >> /etc/httpd/conf.d/moodle.conf
@@ -508,43 +466,43 @@ Resources:
               content: !Sub |
                 [general]
                 state_file= /var/awslogs/state/agent-state
-                
+
                 [/var/log/cloud-init.log]
                 file = /var/log/cloud-init.log
                 log_group_name = ${Logs}
                 log_stream_name = {instance_id}/cloud-init.log
-                datetime_format = 
-                
+                datetime_format =
+
                 [/var/log/cloud-init-output.log]
                 file = /var/log/cloud-init-output.log
                 log_group_name = ${Logs}
                 log_stream_name = {instance_id}/cloud-init-output.log
-                datetime_format = 
-                
+                datetime_format =
+
                 [/var/log/cfn-init.log]
                 file = /var/log/cfn-init.log
                 log_group_name = ${Logs}
                 log_stream_name = {instance_id}/cfn-init.log
-                datetime_format = 
-                
+                datetime_format =
+
                 [/var/log/cfn-hup.log]
                 file = /var/log/cfn-hup.log
                 log_group_name = ${Logs}
                 log_stream_name = {instance_id}/cfn-hup.log
-                datetime_format = 
-                
+                datetime_format =
+
                 [/var/log/cfn-wire.log]
                 file = /var/log/cfn-wire.log
                 log_group_name = ${Logs}
                 log_stream_name = {instance_id}/cfn-wire.log
-                datetime_format = 
-                
+                datetime_format =
+
                 [/var/log/httpd]
                 file = /var/log/httpd/*
                 log_group_name = ${Logs}
                 log_stream_name = {instance_id}/httpd
                 datetime_format = %d/%b/%Y:%H:%M:%S
-                
+
               mode: '000444'
               owner: root
               group: root
@@ -566,7 +524,7 @@ Resources:
                 enabled: 'true'
                 ensureRunning: 'true'
                 files: /etc/awslogs/awslogs.conf
-              
+
         install_aws_ini:
           commands:
             install_aws_ini:
@@ -602,7 +560,7 @@ Resources:
                   // Depending on whether the secret is a string or binary, one of these fields will be populated.
                   if (isset($result['SecretString'])) {
                       $secret = $result['SecretString'];
-                  } 
+                  }
                   $CFG = new stdClass;
                   $CFG->dbtype = 'auroramysql';
                   $CFG->dblibrary = 'native';
@@ -650,14 +608,14 @@ Resources:
                   @error_reporting(E_ALL | E_STRICT);   // NOT FOR PRODUCTION SERVERS!
                   @ini_set('display_errors', '1');         // NOT FOR PRODUCTION SERVERS!
                   $CFG->debug = (E_ALL | E_STRICT);   // === DEBUG_DEVELOPER - NOT FOR PRODUCTION SERVERS!
-                  $CFG->debugdisplay = 1; 
+                  $CFG->debugdisplay = 1;
                   require_once(__DIR__ . '/lib/setup.php');
                   // END OF CONFIG //
                   ?>
               mode: '000755'
               owner: root
               group: root
-            
+
             /tmp/install_moodle.sh:
               content:  !Sub |
                 #!/bin/bash -xe
@@ -667,7 +625,7 @@ Resources:
                 cp /tmp/config.php /var/www/moodle/html/config.php
                 chown -R root:apache /var/www/moodle/html
                 chown -R apache:apache /var/www/moodle/local
-                
+
               mode: 000500
               owner: root
               group: root
@@ -675,33 +633,33 @@ Resources:
             install_moodle:
               command: ./install_moodle.sh
               cwd: /tmp
-              ignoreErrors: false          
+              ignoreErrors: false
         install_cacheclient:
           packages:
             yum:
-              gcc-c++: []  
+              gcc-c++: []
           files:
             /tmp/install_cacheclient.sh:
               content:
                 !Sub |
                   #!/bin/bash -xe
-                  
+
                   #Install memcached and then remove it. Memcached is not actually needed. We install amazon-elasticache-cluster-client.so instead. However Moodle does not detect memcached is installed. Therefore, this tricks Moodle into thinking it is installed.
                   sudo yum install -y php-pecl-memcached
                   sudo yum remove -y php-pecl-memcached
-                  
+
                   wget -P /tmp/ https://elasticache-downloads.s3.amazonaws.com/ClusterClient/PHP-7.3/latest-64bit
-                  tar -xf '/tmp/latest-64bit' 
+                  tar -xf '/tmp/latest-64bit'
                   cp '/tmp/amazon-elasticache-cluster-client.so' /usr/lib64/php/modules/
                   if [ ! -f /etc/php.d/50-memcached.ini ]; then
                       touch /etc/php.d/50-memcached.ini
                   fi
                   echo 'extension=/usr/lib64/php/modules/amazon-elasticache-cluster-client.so;' >> /etc/php.d/50-memcached.ini
                   echo 'extension=igbinary.so;' >> /etc/php.d/50-memcached.ini
-                  
+
                   #update Moodle source to use DYNAMIC_CLIENT_MODE so Moodle can detect changes to the elasticache cluster membership
                   sed -i '/\$this->options\[Memcached::OPT_BUFFER_WRITES\] = \$bufferwrites;/a \ \ \ \ \ \ \ \ $this->options[Memcached::OPT_CLIENT_MODE] = Memcached::DYNAMIC_CLIENT_MODE;' /var/www/moodle/html/cache/stores/memcached/lib.php
-                  
+
               mode: 000500
               owner: root
               group: root
@@ -720,7 +678,7 @@ Resources:
                 !Sub |
                   #!/bin/bash -xe
                   # create hidden opcache directory locally & change owner to apache
-                  if [ ! -d /var/www/.opcache ]; then                    
+                  if [ ! -d /var/www/.opcache ]; then
                       mkdir -p /var/www/.opcache
                   fi
                   #Ensure opcache is enabled and add settings recomended by moodle at https://docs.moodle.org/34/en/OPcache
@@ -759,19 +717,19 @@ Resources:
           !Sub |
             #!/bin/bash -xe
             yum update -y
-            
+
             #Create directory structure
             mkdir -p /var/www/moodle/html
             mkdir -p /var/www/moodle/data
             mkdir -p /var/www/moodle/cache
             mkdir -p /var/www/moodle/temp
             mkdir -p /var/www/moodle/local
-            
+
             #Mount shared storage
             mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 ${ElasticFileSystem}.efs.${AWS::Region}.amazonaws.com:/data /var/www/moodle/data
             mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 ${ElasticFileSystem}.efs.${AWS::Region}.amazonaws.com:/cache /var/www/moodle/cache
             mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 ${ElasticFileSystem}.efs.${AWS::Region}.amazonaws.com:/temp /var/www/moodle/temp
-            
+
             #Run CloudFormation Init Scripts
             /opt/aws/bin/cfn-init --configsets deploy_webserver --verbose --stack ${AWS::StackName} --resource WebLaunchConfiguration --region ${AWS::Region}
             /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource WebAutoScalingGroup --region ${AWS::Region}

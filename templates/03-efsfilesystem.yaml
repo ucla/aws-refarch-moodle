@@ -55,77 +55,69 @@ Parameters:
   Growth:
     ConstraintDescription: Must be an integer.
     Default: 0
-    Description: Amount of dummy data (GiB) to add to the file system (max 6144 GiB). Amazon EFS storage charges apply. 
+    Description: Amount of dummy data (GiB) to add to the file system (max 6144 GiB). Amazon EFS storage charges apply.
     MaxValue: 6144
     MinValue: 0
     Type: Number
   InstanceType:
     AllowedValues:
-      - t2.nano
-      - t2.micro
-      - t2.small
-      - t2.medium
-      - t2.large
-      - t2.xlarge
-      - t2.2xlarge
-      - m3.medium
-      - m3.large
-      - m3.xlarge
-      - m3.2xlarge
-      - m4.large
-      - m4.xlarge
-      - m4.2xlarge
-      - m4.4xlarge
-      - m4.10xlarge
-      - m4.16xlarge
-      - c3.large
-      - c3.xlarge
-      - c3.2xlarge
-      - c3.4xlarge
-      - c3.8xlarge
-      - c4.large
-      - c4.xlarge
-      - c4.2xlarge
-      - c4.4xlarge
-      - c4.8xlarge
+      - t3.nano
+      - t3.micro
+      - t3.small
+      - t3.medium
+      - t3.large
+      - t3.xlarge
+      - t3.2xlarge
+      - m5.large
+      - m5.xlarge
+      - m5.2xlarge
+      - m5.4xlarge
+      - m5.12xlarge
+      - m5.24xlarge
       - c5.large
       - c5.xlarge
       - c5.2xlarge
       - c5.4xlarge
-      - c5.8xlarge
-      - r3.large
-      - r3.xlarge
-      - r3.2xlarge
-      - r3.4xlarge
-      - r3.8xlarge
-      - r4.large
-      - r4.xlarge
-      - r4.2xlarge
-      - r4.4xlarge
-      - r4.8xlarge
-      - r4.16xlarge
+      - c5.9xlarge
+      - c5.18xlarge
+      - r5.large
+      - r5.xlarge
+      - r5.2xlarge
+      - r5.4xlarge
+      - r5.8xlarge
+      - r5.16xlarge
+      - x1.16xlarge
+      - x1.32xlarge
+      - x1e.xlarge
+      - x1e.2xlarge
+      - x1e.4xlarge
+      - x1e.8xlarge
+      - x1e.16xlarge
+      - x1e.32xlarge
+      - d2.xlarge
+      - d2.2xlarge
+      - d2.4xlarge
+      - d2.8xlarge
+      - h1.2xlarge
+      - h1.4xlarge
+      - h1.8xlarge
+      - h1.16xlarge
       - i3.large
       - i3.xlarge
       - i3.2xlarge
       - i3.4xlarge
       - i3.8xlarge
       - i3.16xlarge
-      - d2.xlarge
-      - d2.2xlarge
-      - d2.4xlarge
-      - d2.8xlarge
-      - p2.xlarge
-      - p2.8xlarage
-      - p2.16xlarge
-      - g3.4xlarge
-      - g3.8xlarge
-      - g3.16xlarge
       - f1.2xlarge
       - f1.16xlarge
-      - x1.16xlarge
-      - x1.32xlarge
+      - g4.4xlarge
+      - g4.8xlarge
+      - g4.16xlarge
+      - p4.2xlarge
+      - p4.8xlarge
+      - p4.16xlarge
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
-    Default: r4.large
+    Default: r5.large
     Description: The Amazon EC2 instance type that adds data to the file system.
     Type: String
   EC2KeyName:
@@ -140,7 +132,7 @@ Parameters:
     - 6
     Default: 3
     Description: Number of subnets. This must match your selections in the list of Subnets below.
-    Type: String 
+    Type: String
   PerformanceMode:
     AllowedValues:
       - generalPurpose
@@ -150,17 +142,17 @@ Parameters:
     Type: String
   SecurityGroup:
     Description: Select the Amazon EFS security group.
-    Type: AWS::EC2::SecurityGroup::Id   
+    Type: AWS::EC2::SecurityGroup::Id
   Subnet:
     Description: Select existing subnets.
     Type: List<AWS::EC2::Subnet::Id>
   LatestAmiId :
     Type : AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
-    
+
 
 Conditions:
-  
+
   NumberOfSubnets1:
       !Equals [ 1, !Ref NumberOfSubnets ]
   NumberOfSubnets2:
@@ -198,7 +190,7 @@ Conditions:
   Subnet4: !Or
     - !Condition NumberOfSubnets5
     - !Condition NumberOfSubnets6
-  Subnet5: !Condition NumberOfSubnets6  
+  Subnet5: !Condition NumberOfSubnets6
   UseAWS-ManagedCMK:
     !Equals ['', !Ref Cmk]
 
@@ -357,7 +349,7 @@ Resources:
             yum:
               #Only needed to set permissions on the moodle folder
               httpd: []
-          files:              
+          files:
             /tmp/efs-add-storage.sh:
               content: !Sub |
                 #!/bin/bash -x
@@ -398,7 +390,7 @@ Resources:
                 sudo mkdir -p /$FILE_SYSTEM_ID
                 sudo chown ec2-user:ec2-user /$FILE_SYSTEM_ID
                 sudo mountpoint -q /$FILE_SYSTEM_ID || sudo mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 $FILE_SYSTEM_ID.efs.$region.amazonaws.com:/ /$FILE_SYSTEM_ID
-                
+
                 #Create directories for Moodle
                 sudo mkdir -p /$FILE_SYSTEM_ID/data
                 sudo mkdir -p /$FILE_SYSTEM_ID/cache
@@ -438,7 +430,7 @@ Resources:
 
               mode: 000777
               owner: root
-              group: root             
+              group: root
     Properties:
       BlockDeviceMappings:
         - DeviceName: /dev/xvda
@@ -473,7 +465,7 @@ Resources:
           ]
   EfsSizeMonitorFunction:
     Type: AWS::Lambda::Function
-    Properties: 
+    Properties:
       Code:
         ZipFile: !Sub |
           import boto3
@@ -546,16 +538,16 @@ Resources:
       ManagedPolicyArns:
       - arn:aws:iam::aws:policy/CloudWatchFullAccess
       - arn:aws:iam::aws:policy/AmazonElasticFileSystemReadOnlyAccess
-  EfsLambdaPermission: 
+  EfsLambdaPermission:
     Type: AWS::Lambda::Permission
-    Properties: 
+    Properties:
       FunctionName: !Ref EfsSizeMonitorFunction
       Action: lambda:InvokeFunction
       Principal: events.amazonaws.com
       SourceArn: !GetAtt EfsSizeMonitorEvent.Arn
   EfsSizeMonitorEvent:
     Type: AWS::Events::Rule
-    Properties: 
+    Properties:
       Description: Scheduled event to update SizeInBytes EFS CloudWatch metric
       Name: !Join [ '', [ 'efs-', !Ref ElasticFileSystem, '-size-monitor-scheduled-event' ] ]
       ScheduleExpression: rate(1 minute)
