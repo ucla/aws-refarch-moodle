@@ -700,7 +700,7 @@ Resources:
           !Ref DataSubnet4Cidr
         DataSubnet5Cidr:
           !Ref DataSubnet5Cidr
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/01-newvpc.yaml
+      TemplateURL: https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/01-newvpc.yaml
   securitygroups:
     DependsOn: vpc
     Type: AWS::CloudFormation::Stack
@@ -710,7 +710,7 @@ Resources:
           !Ref SshAccessCidr
         Vpc:
           !GetAtt [ vpc, Outputs.Vpc ]
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/02-securitygroups.yaml
+      TemplateURL: https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/02-securitygroups.yaml
   bastion:
     DependsOn: securitygroups
     Type: AWS::CloudFormation::Stack
@@ -726,7 +726,7 @@ Resources:
           !Ref NumberOfAZs
         Subnet:
           !GetAtt [ vpc, Outputs.PublicSubnet ]
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/03-bastion.yaml
+      TemplateURL: https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/03-bastion.yaml
   publicalb:
     DependsOn: securitygroups
     Type: AWS::CloudFormation::Stack
@@ -742,7 +742,7 @@ Resources:
           !GetAtt [ securitygroups, Outputs.PublicAlbSecurityGroup ]
         Vpc:
           !GetAtt [ vpc, Outputs.Vpc ]
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/03-publicalb.yaml
+      TemplateURL: https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/03-publicalb.yaml
   rds:
     DependsOn: [ securitygroups ]
     Type: AWS::CloudFormation::Stack
@@ -766,7 +766,7 @@ Resources:
           !GetAtt [ vpc, Outputs.DataSubnet ]
         NumberOfSubnets:
           !Ref NumberOfAZs
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/03-rds.yaml
+      TemplateURL: https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/03-rds.yaml
   efsfilesystem:
     DependsOn: securitygroups
     Type: AWS::CloudFormation::Stack
@@ -790,7 +790,7 @@ Resources:
           !Ref EfsPerformanceMode
         Subnet:
           !GetAtt [ vpc, Outputs.DataSubnet ]
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/03-efsfilesystem.yaml
+      TemplateURL: https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/03-efsfilesystem.yaml
   sessioncache:
     Condition: DeployWithSessionCache
     DependsOn: securitygroups
@@ -807,7 +807,7 @@ Resources:
           !GetAtt [ securitygroups, Outputs.ElastiCacheSecurityGroup ]
         NumberOfSubnets:
           !Ref NumberOfAZs
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/03-elasticache.yaml
+      TemplateURL: https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/03-elasticache.yaml
   applicationcache:
     Condition: DeployApplicationCache
     DependsOn: securitygroups
@@ -824,7 +824,7 @@ Resources:
           !GetAtt [ securitygroups, Outputs.ElastiCacheSecurityGroup ]
         NumberOfSubnets:
           !Ref NumberOfAZs
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/03-elasticache.yaml
+      TemplateURL: https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/03-elasticache.yaml
   webnocache:
     DependsOn: [ publicalb, rds, efsfilesystem ]
     Condition: DeployWithoutSessionCache
@@ -867,7 +867,7 @@ Resources:
           !Ref MoodleLocale
         ElastiCacheClusterEndpointAddress:
           ''
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/04-web.yaml
+      TemplateURL: https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/04-web.yaml
   webcached:
     DependsOn: [ publicalb, rds, efsfilesystem, sessioncache ]
     Condition: DeployWithSessionCache
@@ -910,7 +910,7 @@ Resources:
           !Ref MoodleLocale
         ElastiCacheClusterEndpointAddress:
           !GetAtt sessioncache.Outputs.ElastiCacheClusterEndpointAddress
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/04-web.yaml
+      TemplateURL: https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/04-web.yaml
   cloudfront:
     Condition: DeployCloudFront
     DependsOn: publicalb
@@ -923,7 +923,7 @@ Resources:
           !GetAtt [ publicalb, Outputs.PublicAlbDnsName ]
         DomainName:
           !Ref DomainName
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/04-cloudfront.yaml
+      TemplateURL: https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/04-cloudfront.yaml
   route53:
     Condition: DeployRoute53
     DependsOn: publicalb
@@ -938,7 +938,7 @@ Resources:
           !Ref HostedZoneName
         DomainName:
           !Ref DomainName
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/05-route53.yaml
+      TemplateURL: https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/05-route53.yaml
 
 Outputs:
   DnsName:
