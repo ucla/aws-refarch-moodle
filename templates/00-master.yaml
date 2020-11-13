@@ -368,7 +368,7 @@ Parameters:
     AllowedValues:
       - true
       - false
-    Default: true
+    Default: false
     Description: Specifies whether an ElastiCache Cache Cluster should be created to cache application content. Do not create a application cache during the inital deploy. You should update the stack to use application cache after completing the installation wizard.
     Type: String
   ApplicationCacheNodeType:
@@ -475,7 +475,7 @@ Parameters:
   MoodleLocale:
     Description: "The main language of the Moodle site, during initial configuration."
     Type: String
-    Default: en
+    Default: en_us
   AvailabilityZones:
     Description: 'List of Availability Zones to use for the subnets in the VPC. Note:
       The logical order is preserved.'
