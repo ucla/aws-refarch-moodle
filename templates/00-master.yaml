@@ -188,16 +188,9 @@ Metadata:
 Parameters:
   BastionInstanceType:
     AllowedValues:
-      - t3.nano
-      - t4g.nano
-      - t4g.micro
-      - t4g.small
-      - t4g.medium
-      - t4g.large
-      - t4g.xlarge
-      - t4g.2xlarge
+    - t2.nano
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
-    Default: t4g.nano
+    Default: t2.nano
     Description: Bastion EC2 instance type.
     Type: String
   PublicAlbAcmCertificate:
