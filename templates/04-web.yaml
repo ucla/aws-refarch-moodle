@@ -480,7 +480,22 @@ Resources:
                 #!/bin/bash -xe
                 amazon-linux-extras install -y php7.3
                 yum install -y awslogs httpd mysql php-gd php-soap php-intl php-mbstring php-xmlrpc php-zip
-                sed -i 's/memory_limit =.*/memory_limit = 2048M/' /etc/php.ini
+                # Change memory limit to help with large backup/restore
+                sed -i 's/memory_limit =.*/memory_limit = 8192M/' /etc/php.ini
+                sed -i 's/max_execution_time =.*/max_execution_time = 300/' /etc/php.ini
+                sed -i 's/max_input_time =.*/max_input_time = 300/' /etc/php.ini
+                sed -i 's/default_socket_timeout =.*/default_socket_timeout = 300/' /etc/php.ini
+                sed -i 's/upload_max_filesize =.*/upload_max_filesize = 2G/' /etc/php.ini
+                sed -i 's/post_max_size =.*/post_max_size = 2G/' /etc/php.ini
+                # Change output buffering from 4096 to 32768 because seeing error in apache log with zend_mm_heap corrupted
+                sed -i 's/output_buffering =.*/output_buffering = 32768/' /etc/php.ini
+                sed -i 's/realpath_cache_size =.*/realpath_cache_size = 4096k/' /etc/php.ini
+                sed -i 's/realpath_cache_ttl =.*/realpath_cache_size = 256/' /etc/php.ini
+                sed -i 's/expose_php =.*/expose_php = Off/' /etc/php.ini
+                # Needed for Gradebook since it can have so many fields
+                sed -i 's/max_input_vars =.*/max_input_vars = 10000/' /etc/php.ini
+                sed -i 's/;date.timezone =.*/date.timezone = America\/Los_Angeles/' /etc/php.ini
+
                 if [ ! -f /etc/httpd/conf.d/moodle.conf ]; then
                    touch /etc/httpd/conf.d/moodle.conf
                    echo 'ServerName 127.0.0.1:80' >> /etc/httpd/conf.d/moodle.conf
