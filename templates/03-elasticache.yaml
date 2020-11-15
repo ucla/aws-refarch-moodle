@@ -30,7 +30,7 @@ Metadata:
 Parameters:
 
   ElastiCacheClusterName:
-    AllowedPattern: ^([a-zA-Z0-9]*)$
+    AllowedPattern: ^([a-zA-Z0-9-]*)$
     Description: The ElastiCache cluster name. Defaults to the Amazon RDS database name.
     Type: String
   ElastiCacheNodeType:
