@@ -35,8 +35,9 @@ Parameters:
   BastionInstanceType:
     AllowedValues:
     - t2.nano
+    - t3.nano
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
-    Default: t2.nano
+    Default: t3.nano
     Description: Bastion EC2 instance type.
     Type: String
   EC2KeyName:
@@ -149,6 +150,11 @@ Resources:
       KeyName: !Ref EC2KeyName
       SecurityGroups:
         - !Ref BastionSecurityGroup
+      UserData:
+        "Fn::Base64":
+          !Sub |
+            #!/bin/bash -xe
+            yum update -y
   BastionInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:

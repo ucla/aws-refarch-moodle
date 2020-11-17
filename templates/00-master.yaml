@@ -189,8 +189,9 @@ Parameters:
   BastionInstanceType:
     AllowedValues:
     - t2.nano
+    - t3.nano
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
-    Default: t2.nano
+    Default: t3.nano
     Description: Bastion EC2 instance type.
     Type: String
   PublicAlbAcmCertificate:
