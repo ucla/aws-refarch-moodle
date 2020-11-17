@@ -215,6 +215,10 @@ Resources:
         - Key: Name
           Value: !Join [ '', [ 'Moodle / ', !Ref 'AWS::StackName' ] ]
       PerformanceMode: !Ref PerformanceMode
+      BackupPolicy:
+        Status: ENABLED
+      LifecyclePolicies:
+        - TransitionToIA: "AFTER_90_DAYS"
   ElasticFileSystemMountTarget0:
     Condition: Subnet0
     Type: AWS::EFS::MountTarget
