@@ -108,12 +108,6 @@ Parameters:
     - i3.16xlarge
     - f1.2xlarge
     - f1.16xlarge
-    - g4.4xlarge
-    - g4.8xlarge
-    - g4.16xlarge
-    - p4.2xlarge
-    - p4.8xlarge
-    - p4.16xlarge
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
     Default: r5.large
     Description: The Amazon EC2 instance type that dynamically adjusts thresholds based on permitted throughput changes.
@@ -156,48 +150,19 @@ Conditions:
       !Equals [ 4, !Ref NumberOfSubnets ]
   NumberOfSubnets5:
       !Equals [ 5, !Ref NumberOfSubnets ]
-  NumberOfSubnets6:
-      !Equals [ 6, !Ref NumberOfSubnets ]
-  Subnet0: !Or
-    - !Condition NumberOfSubnets1
-    - !Condition NumberOfSubnets2
-    - !Condition NumberOfSubnets3
-    - !Condition NumberOfSubnets4
-    - !Condition NumberOfSubnets5
-    - !Condition NumberOfSubnets6
-  Subnet1: !Or
-    - !Condition NumberOfSubnets2
-    - !Condition NumberOfSubnets3
-    - !Condition NumberOfSubnets4
-    - !Condition NumberOfSubnets5
-    - !Condition NumberOfSubnets6
-  Subnet2: !Or
-    - !Condition NumberOfSubnets3
-    - !Condition NumberOfSubnets4
-    - !Condition NumberOfSubnets5
-    - !Condition NumberOfSubnets6
-  Subnet3: !Or
-    - !Condition NumberOfSubnets4
-    - !Condition NumberOfSubnets5
-    - !Condition NumberOfSubnets6
-  Subnet4: !Or
-    - !Condition NumberOfSubnets5
-    - !Condition NumberOfSubnets6
-  Subnet5: !Condition NumberOfSubnets6
-
 
 Resources:
 
   AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
-      Cooldown: 60
+      Cooldown: '60'
       HealthCheckGracePeriod: 120
       HealthCheckType: EC2
       LaunchConfigurationName: !Ref LaunchConfiguration
-      MaxSize: 1
-      MinSize: 0
-      DesiredCapacity: 1
+      MaxSize: '1'
+      MinSize: '0'
+      DesiredCapacity: '1'
       Tags:
         - Key: Name
           Value: !Join [ '', [ 'Updating ', !Ref 'ElasticFileSystem', ' burst credit balance Cloudwatch alarms.. will auto terminate' ] ]
@@ -233,7 +198,7 @@ Resources:
     Properties:
       AdjustmentType: ChangeInCapacity
       AutoScalingGroupName: !Ref AutoScalingGroup
-      Cooldown: 60
+      Cooldown: '60'
       PolicyType: SimpleScaling
       ScalingAdjustment: 1
   BurstCreditBalanceDecreaseAlarm:

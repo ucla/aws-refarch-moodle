@@ -22,7 +22,6 @@ Metadata:
         - NumberOfAZs
         - AvailabilityZones
         - VpcCidr
-        - VpcTenancy
         - PublicSubnet0Cidr
         - PublicSubnet1Cidr
         - PublicSubnet2Cidr
@@ -141,8 +140,6 @@ Metadata:
         default: Number of Availability Zones
       VpcCidr:
         default: VpcCidr
-      VpcTenancy:
-        default: VpcTenancy
       PublicSubnet0Cidr:
         default: Public Subnet 0
       PublicSubnet1Cidr:
@@ -323,12 +320,6 @@ Parameters:
     - i3.16xlarge
     - f1.2xlarge
     - f1.16xlarge
-    - g4.4xlarge
-    - g4.8xlarge
-    - g4.16xlarge
-    - p4.2xlarge
-    - p4.8xlarge
-    - p4.16xlarge
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
     Default: r5.large
     Description: The Amazon EC2 instance type that adds data to the file system.
@@ -343,20 +334,12 @@ Parameters:
   SessionCacheNodeType:
     AllowedValues:
       - cache.t3.micro
-      - cache.t3.small
-      - cache.t3.medium
       - cache.m5.large
-      - cache.m5.xlarge
-      - cache.m5.2xlarge
-      - cache.m5.4xlarge
-      - cache.m5.10xlarge
+      - cache.m6g.large
+      - cache.r5.large
       - cache.r6g.large
-      - cache.r6g.xlarge
-      - cache.r6g.2xlarge
-      - cache.r6g.4xlarge
-      - cache.r6g.8xlarge
     ConstraintDescription: Must be a valid Amazon ElastiCache node type.
-    Default: cache.t3.medium
+    Default: cache.r5.large
     Description: The Amazon ElastiCache cluster node type.
     Type: String
   UseApplicationCacheBoolean:
@@ -369,20 +352,12 @@ Parameters:
   ApplicationCacheNodeType:
     AllowedValues:
       - cache.t3.micro
-      - cache.t3.small
-      - cache.t3.medium
       - cache.m5.large
-      - cache.m5.xlarge
-      - cache.m5.2xlarge
-      - cache.m5.4xlarge
-      - cache.m5.10xlarge
+      - cache.m6g.large
+      - cache.r5.large
       - cache.r6g.large
-      - cache.r6g.xlarge
-      - cache.r6g.2xlarge
-      - cache.r6g.4xlarge
-      - cache.r6g.8xlarge
     ConstraintDescription: Must be a valid Amazon ElastiCache node type.
-    Default: cache.t3.medium
+    Default: cache.r5.large
     Description: The Amazon ElastiCache cluster node type.
     Type: String
   EC2KeyName:
@@ -449,12 +424,6 @@ Parameters:
       - i3.16xlarge
       - f1.2xlarge
       - f1.16xlarge
-      - g4.4xlarge
-      - g4.8xlarge
-      - g4.16xlarge
-      - p4.2xlarge
-      - p4.8xlarge
-      - p4.16xlarge
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
     Default: t3.large
     Description: The Amazon EC2 instance type for your web instances.
@@ -491,13 +460,6 @@ Parameters:
     ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
     Default: 10.0.0.0/16
     Description: CIDR block for the VPC
-    Type: String
-  VpcTenancy:
-    AllowedValues:
-    - default
-    - dedicated
-    Default: default
-    Description: The allowed tenancy of instances launched into the VPC
     Type: String
   DataSubnet0Cidr:
     AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
@@ -657,8 +619,6 @@ Resources:
             - !Ref AvailabilityZones
         VpcCidr:
           !Ref VpcCidr
-        VpcTenancy:
-          !Ref VpcTenancy
         PublicSubnet0Cidr:
           !Ref PublicSubnet0Cidr
         PublicSubnet1Cidr:
@@ -697,7 +657,6 @@ Resources:
           !Ref DataSubnet5Cidr
       TemplateURL: https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/01-newvpc.yaml
   securitygroups:
-    DependsOn: vpc
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
@@ -707,7 +666,6 @@ Resources:
           !GetAtt [ vpc, Outputs.Vpc ]
       TemplateURL: https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/02-securitygroups.yaml
   bastion:
-    DependsOn: securitygroups
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
@@ -723,7 +681,6 @@ Resources:
           !GetAtt [ vpc, Outputs.PublicSubnet ]
       TemplateURL: https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/03-bastion.yaml
   publicalb:
-    DependsOn: securitygroups
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
@@ -739,7 +696,6 @@ Resources:
           !GetAtt [ vpc, Outputs.Vpc ]
       TemplateURL: https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/03-publicalb.yaml
   rds:
-    DependsOn: [ securitygroups ]
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
@@ -763,7 +719,6 @@ Resources:
           !Ref NumberOfAZs
       TemplateURL: https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/03-rds.yaml
   efsfilesystem:
-    DependsOn: securitygroups
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
@@ -788,7 +743,6 @@ Resources:
       TemplateURL: https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/03-efsfilesystem.yaml
   sessioncache:
     Condition: DeployWithSessionCache
-    DependsOn: securitygroups
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
@@ -805,7 +759,6 @@ Resources:
       TemplateURL: https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/03-elasticache.yaml
   applicationcache:
     Condition: DeployApplicationCache
-    DependsOn: securitygroups
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
@@ -821,7 +774,6 @@ Resources:
           !Ref NumberOfAZs
       TemplateURL: https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/03-elasticache.yaml
   webnocache:
-    DependsOn: [ publicalb, rds, efsfilesystem ]
     Condition: DeployWithoutSessionCache
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -864,7 +816,6 @@ Resources:
           ''
       TemplateURL: https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/04-web.yaml
   webcached:
-    DependsOn: [ publicalb, rds, efsfilesystem, sessioncache ]
     Condition: DeployWithSessionCache
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -908,7 +859,6 @@ Resources:
       TemplateURL: https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/04-web.yaml
   cloudfront:
     Condition: DeployCloudFront
-    DependsOn: publicalb
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
@@ -921,7 +871,6 @@ Resources:
       TemplateURL: https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/04-cloudfront.yaml
   route53:
     Condition: DeployRoute53
-    DependsOn: publicalb
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:

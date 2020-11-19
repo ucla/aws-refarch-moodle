@@ -14,7 +14,6 @@ Metadata:
       - NumberOfAZs
       - AvailabilityZones
       - VpcCidr
-      - VpcTenancy
       - PublicSubnet0Cidr
       - PublicSubnet1Cidr
       - PublicSubnet2Cidr
@@ -40,8 +39,6 @@ Metadata:
         default: Number of Availability Zones
       VpcCidr:
         default: VpcCidr
-      VpcTenancy:
-        default: VpcTenancy
       PublicSubnet0Cidr:
         default: Public Subnet 0
       PublicSubnet1Cidr:
@@ -101,13 +98,6 @@ Parameters:
     ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
     Default: 10.0.0.0/16
     Description: CIDR block for the VPC
-    Type: String
-  VpcTenancy:
-    AllowedValues:
-    - default
-    - dedicated
-    Default: default
-    Description: The allowed tenancy of instances launched into the VPC
     Type: String
   DataSubnet0Cidr:
     AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
@@ -736,7 +726,7 @@ Resources:
     Type: AWS::EC2::SubnetRouteTableAssociation
     Properties:
       SubnetId: !Ref PublicSubnet5
-      RouteTableId: !Ref PublicRouteTable            
+      RouteTableId: !Ref PublicRouteTable
 
   PublicSubnet0:
     Condition: AZ0
@@ -862,7 +852,7 @@ Resources:
                 Resource: '*'
 
 Outputs:
-  
+
   Vpc:
     Value: !Ref Vpc
   VpcCidr:
@@ -881,7 +871,7 @@ Outputs:
     Value: !Ref PublicSubnet3
   PublicSubnet4:
     Condition: AZ4
-    Value: !Ref PublicSubnet4  
+    Value: !Ref PublicSubnet4
   PublicSubnet5:
     Condition: AZ5
     Value: !Ref PublicSubnet5
@@ -899,7 +889,7 @@ Outputs:
     Value: !Ref WebSubnet3
   WebSubnet4:
     Condition: AZ4
-    Value: !Ref WebSubnet4   
+    Value: !Ref WebSubnet4
   WebSubnet5:
     Condition: AZ5
     Value: !Ref WebSubnet5
@@ -917,7 +907,7 @@ Outputs:
     Value: !Ref DataSubnet3
   DataSubnet4:
     Condition: AZ4
-    Value: !Ref DataSubnet4  
+    Value: !Ref DataSubnet4
   DataSubnet5:
     Condition: AZ5
     Value: !Ref DataSubnet5
@@ -943,7 +933,7 @@ Outputs:
               ]
             ]
           ]
-        ] 
+        ]
   WebSubnet:
     Value:
       !If
@@ -966,7 +956,7 @@ Outputs:
               ]
             ]
           ]
-        ] 
+        ]
   PublicSubnet:
     Value:
       !If
@@ -989,5 +979,5 @@ Outputs:
               ]
             ]
           ]
-        ] 
+        ]
 

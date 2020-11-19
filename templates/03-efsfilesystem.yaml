@@ -110,12 +110,6 @@ Parameters:
       - i3.16xlarge
       - f1.2xlarge
       - f1.16xlarge
-      - g4.4xlarge
-      - g4.8xlarge
-      - g4.16xlarge
-      - p4.2xlarge
-      - p4.8xlarge
-      - p4.16xlarge
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
     Default: r5.large
     Description: The Amazon EC2 instance type that adds data to the file system.
@@ -293,13 +287,13 @@ Resources:
   AutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
-      Cooldown: 60
+      Cooldown: '60'
       HealthCheckGracePeriod: 120
       HealthCheckType: EC2
       LaunchConfigurationName: !Ref LaunchConfiguration
-      MaxSize: 1
-      MinSize: 0
-      DesiredCapacity: 1
+      MaxSize: '1'
+      MinSize: '0'
+      DesiredCapacity: '1'
       Tags:
         - Key: Name
           Value: !Join [ '', [ 'EFS ', !Ref ElasticFileSystem, ' data load... will auto terminate.' ] ]
@@ -338,7 +332,7 @@ Resources:
     Properties:
       AdjustmentType: ChangeInCapacity
       AutoScalingGroupName: !Ref AutoScalingGroup
-      Cooldown: 60
+      Cooldown: '60'
       PolicyType: SimpleScaling
       ScalingAdjustment: 1
   LaunchConfiguration:
@@ -355,7 +349,7 @@ Resources:
               httpd: []
           files:
             /tmp/efs-add-storage.sh:
-              content: !Sub |
+              content: |
                 #!/bin/bash -x
 
                 FILE_SYSTEM_ID=$1
@@ -471,7 +465,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Code:
-        ZipFile: !Sub |
+        ZipFile: |
           import boto3
           import os
           import sys
@@ -558,7 +552,7 @@ Resources:
       State: ENABLED
       Targets:
         - Arn: !GetAtt EfsSizeMonitorFunction.Arn
-          Id: 1
+          Id: '1'
 
 Outputs:
   ElasticFileSystem:

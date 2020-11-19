@@ -19,7 +19,6 @@ Metadata:
         - Subnet
         - PublicAlbTargetGroupArn
         - PublicAlbHostname
-        - SslCertificate
     - Label:
         default: Moodle Parameters
       Parameters:
@@ -59,8 +58,6 @@ Metadata:
         default: Public ALB Target Group Arn
       PublicAlbHostname:
         default: Public ALB Hostname
-      SslCertificate:
-        default: ACM Cert attached to Public ALB
       Subnet:
         default: Subnets
       WebAsgMax:
@@ -131,14 +128,6 @@ Parameters:
   PublicAlbHostname:
     Description: The hostname of the public ALB http form (e.g. http://abdc-12345-xyz.<region>.elb.amazonaws.com)
     Type: String
-  SslCertificate:
-    AllowedValues:
-      - True
-      - False
-    Default: True
-    Description: Is there an ACM SSL Certificate attached to the Public ALB?
-    Type:
-      String
   Subnet:
     Description: Select existing subnets. The number selected must match the number of subnets above. Subnets selected must be in separate AZs.
     Type: List<AWS::EC2::Subnet::Id>
@@ -197,12 +186,6 @@ Parameters:
       - i3.16xlarge
       - f1.2xlarge
       - f1.16xlarge
-      - g4.4xlarge
-      - g4.8xlarge
-      - g4.16xlarge
-      - p4.2xlarge
-      - p4.8xlarge
-      - p4.16xlarge
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
     Default: t3.large
     Description: The Amazon EC2 instance type for your web instances.
@@ -225,8 +208,6 @@ Parameters:
 
 Conditions:
 
-  NoSslCertificate:
-    !Equals [ False, !Ref SslCertificate ]
   NumberOfSubnets1:
     !Equals [ 1, !Ref NumberOfSubnets ]
   NumberOfSubnets2:
@@ -237,37 +218,6 @@ Conditions:
     !Equals [ 4, !Ref NumberOfSubnets ]
   NumberOfSubnets5:
     !Equals [ 5, !Ref NumberOfSubnets ]
-  NumberOfSubnets6:
-    !Equals [ 6, !Ref NumberOfSubnets ]
-  Subnet0: !Or
-    - !Condition NumberOfSubnets1
-    - !Condition NumberOfSubnets2
-    - !Condition NumberOfSubnets3
-    - !Condition NumberOfSubnets4
-    - !Condition NumberOfSubnets5
-    - !Condition NumberOfSubnets6
-  Subnet1: !Or
-    - !Condition NumberOfSubnets2
-    - !Condition NumberOfSubnets3
-    - !Condition NumberOfSubnets4
-    - !Condition NumberOfSubnets5
-    - !Condition NumberOfSubnets6
-  Subnet2: !Or
-    - !Condition NumberOfSubnets3
-    - !Condition NumberOfSubnets4
-    - !Condition NumberOfSubnets5
-    - !Condition NumberOfSubnets6
-  Subnet3: !Or
-    - !Condition NumberOfSubnets4
-    - !Condition NumberOfSubnets5
-    - !Condition NumberOfSubnets6
-  Subnet4: !Or
-    - !Condition NumberOfSubnets5
-    - !Condition NumberOfSubnets6
-  Subnet5: !Condition NumberOfSubnets6
-  NoDomainName:
-    !Equals [ '', !Ref DomainName ]
-
 
 Resources:
   WebInstanceProfile:
@@ -325,12 +275,13 @@ Resources:
   Logs:
       Type: AWS::Logs::LogGroup
       DeletionPolicy: Retain
+      UpdateReplacePolicy: Retain
       Properties:
         RetentionInDays: 7
   WebAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
-      Cooldown: 60
+      Cooldown: '60'
       HealthCheckGracePeriod: 150
       HealthCheckType: ELB
       LaunchConfigurationName: !Ref WebLaunchConfiguration
@@ -375,7 +326,7 @@ Resources:
       AdjustmentType: ChangeInCapacity
       AutoScalingGroupName:
         Ref: WebAutoScalingGroup
-      Cooldown: 300
+      Cooldown: '300'
       ScalingAdjustment: 1
   CPUAlarmHigh:
     Type: AWS::CloudWatch::Alarm
@@ -399,7 +350,7 @@ Resources:
       AdjustmentType: ChangeInCapacity
       AutoScalingGroupName:
         Ref: WebAutoScalingGroup
-      Cooldown: 300
+      Cooldown: '300'
       ScalingAdjustment: -1
   CPUAlarmLow:
     Type: AWS::CloudWatch::Alarm
@@ -434,7 +385,7 @@ Resources:
         install_webserver:
           files:
             /tmp/create_site_conf.sh:
-              content: !Sub |
+              content: |
                 #!/bin/bash -xe
                 amazon-linux-extras install -y php7.3
                 yum install -y awslogs httpd mysql php-gd php-soap php-intl php-mbstring php-xmlrpc php-zip
@@ -620,7 +571,7 @@ Resources:
               group: root
 
             /tmp/install_moodle.sh:
-              content:  !Sub |
+              content: |
                 #!/bin/bash -xe
                 wget -O /tmp/moodle.tgz https://download.moodle.org/download.php/direct/stable310/moodle-3.10.tgz
                 tar -xvzf /tmp/moodle.tgz --strip-components=1 -C /var/www/moodle/html/
@@ -643,8 +594,7 @@ Resources:
               gcc-c++: []
           files:
             /tmp/install_cacheclient.sh:
-              content:
-                !Sub |
+              content: |
                   #!/bin/bash -xe
 
                   #Install memcached and then remove it. Memcached is not actually needed. We install amazon-elasticache-cluster-client.so instead. However Moodle does not detect memcached is installed. Therefore, this tricks Moodle into thinking it is installed.
@@ -677,8 +627,7 @@ Resources:
               php-opcache: []
           files:
             /tmp/install_opcache.sh:
-              content:
-                !Sub |
+              content: |
                   #!/bin/bash -xe
                   # create hidden opcache directory locally & change owner to apache
                   if [ ! -d /var/www/.opcache ]; then

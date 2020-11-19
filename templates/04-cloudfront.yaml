@@ -43,8 +43,6 @@ Conditions:
     !Equals [ '', !Ref CloudFrontAcmCertificate ]
   DomainName:
     !Not [ !Equals [ '', !Ref DomainName ] ]
-  NoDomainName:
-    !Equals [ '', !Ref DomainName ]
 
 Resources:
 

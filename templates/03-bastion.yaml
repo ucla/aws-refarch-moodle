@@ -73,47 +73,18 @@ Conditions:
       !Equals [ 4, !Ref NumberOfSubnets ]
   NumberOfSubnets5:
       !Equals [ 5, !Ref NumberOfSubnets ]
-  NumberOfSubnets6:
-      !Equals [ 6, !Ref NumberOfSubnets ]
-  Subnet0: !Or
-    - !Condition NumberOfSubnets1
-    - !Condition NumberOfSubnets2
-    - !Condition NumberOfSubnets3
-    - !Condition NumberOfSubnets4
-    - !Condition NumberOfSubnets5
-    - !Condition NumberOfSubnets6
-  Subnet1: !Or
-    - !Condition NumberOfSubnets2
-    - !Condition NumberOfSubnets3
-    - !Condition NumberOfSubnets4
-    - !Condition NumberOfSubnets5
-    - !Condition NumberOfSubnets6
-  Subnet2: !Or
-    - !Condition NumberOfSubnets3
-    - !Condition NumberOfSubnets4
-    - !Condition NumberOfSubnets5
-    - !Condition NumberOfSubnets6
-  Subnet3: !Or
-    - !Condition NumberOfSubnets4
-    - !Condition NumberOfSubnets5
-    - !Condition NumberOfSubnets6
-  Subnet4: !Or
-    - !Condition NumberOfSubnets5
-    - !Condition NumberOfSubnets6
-  Subnet5: !Condition NumberOfSubnets6
-
 
 Resources:
 
   BastionAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
-      Cooldown: 60
+      Cooldown: '60'
       HealthCheckGracePeriod: 120
       HealthCheckType: EC2
       LaunchConfigurationName: !Ref BastionLaunchConfiguration
-      MaxSize: 1
-      MinSize: 0
+      MaxSize: '1'
+      MinSize: '0'
       Tags:
         - Key: Name
           Value: !Join [ '', [ 'Bastion / ', !Ref 'AWS::StackName' ] ]
@@ -152,9 +123,8 @@ Resources:
         - !Ref BastionSecurityGroup
       UserData:
         "Fn::Base64":
-          !Sub |
-            #!/bin/bash -xe
-            yum update -y
+          #!/bin/bash -xe
+          yum update -y
   BastionInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
