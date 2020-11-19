@@ -52,6 +52,7 @@ Parameters:
     Type: String
   DatabaseInstanceType:
     AllowedValues:
+      - db.t3.micro
       - db.r5.large
       - db.r5.xlarge
       - db.r5.2xlarge
