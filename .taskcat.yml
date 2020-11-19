@@ -6,6 +6,12 @@ project:  # Project specific configuration section
     CloudFrontAcmCertificate: ''
     DatabaseCmk: ''
     DatabaseEncrpytedBoolean: 'true'
+    DataSubnet0Cidr: '10.0.100.0/24'
+    DataSubnet1Cidr: '10.0.101.0/24'
+    DataSubnet2Cidr: '10.0.102.0/24'
+    DataSubnet3Cidr: '10.0.103.0/24'
+    DataSubnet4Cidr: '10.0.104.0/24'
+    DataSubnet5Cidr: '10.0.105.0/24'
     DomainName: ''
     EC2KeyName: CCLE-DR
     EfsCmk: ''
@@ -13,13 +19,26 @@ project:  # Project specific configuration section
     HostedZoneName: ''
     NumberOfAZs: 2
     PublicAlbAcmCertificate: ''
+    PublicSubnet0Cidr: '10.0.200.0/24'
+    PublicSubnet1Cidr: '10.0.201.0/24'
+    PublicSubnet2Cidr: '10.0.202.0/24'
+    PublicSubnet3Cidr: '10.0.203.0/24'
+    PublicSubnet4Cidr: '10.0.204.0/24'
+    PublicSubnet5Cidr: '10.0.205.0/24'
     UseRoute53Boolean: false
     UseApplicationCacheBoolean: 'true'
     UseCloudFrontBoolean: 'true'
     UseRoute53Boolean: 'false'
     UseSessionCacheBoolean: 'true'
+    VpcCidr: '10.0.0.0/16'
     WebAsgMax: 4
     WebInstanceType: c5.xlarge
+    WebSubnet0Cidr: '10.0.0.0/22'
+    WebSubnet1Cidr: '10.0.4.0/22'
+    WebSubnet2Cidr: '10.0.8.0/22'
+    WebSubnet3Cidr: '10.0.12.0/22'
+    WebSubnet4Cidr: '10.0.16.0/22'
+    WebSubnet5Cidr: '10.0.20.0/22'
   regions: # List of AWS regions
     - us-west-2
   # Name of S3 bucket to upload project to
@@ -37,6 +56,7 @@ tests:  # Test definition section
     # provided in project section
     parameters:
       ApplicationCacheNodeType: cache.t3.micro
+      AvailabilityZones: us-west-2c,us-west-2d
       DatabaseInstanceType: db.t3.micro
       EfsGrowthInstanceType: t3.micro
       UseSessionCacheBoolean: 'false'
