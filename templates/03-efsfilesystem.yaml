@@ -110,6 +110,12 @@ Parameters:
       - i3.16xlarge
       - f1.2xlarge
       - f1.16xlarge
+      - g4.4xlarge
+      - g4.8xlarge
+      - g4.16xlarge
+      - p4.2xlarge
+      - p4.8xlarge
+      - p4.16xlarge
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
     Default: r5.large
     Description: The Amazon EC2 instance type that adds data to the file system.
@@ -349,7 +355,7 @@ Resources:
               httpd: []
           files:
             /tmp/efs-add-storage.sh:
-              content: |
+              content: !Sub |
                 #!/bin/bash -x
 
                 FILE_SYSTEM_ID=$1
@@ -465,7 +471,7 @@ Resources:
     Type: AWS::Lambda::Function
     Properties:
       Code:
-        ZipFile: |
+        ZipFile: !Sub |
           import boto3
           import os
           import sys
