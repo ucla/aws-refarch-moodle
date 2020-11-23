@@ -66,6 +66,7 @@ Metadata:
         - ApplicationCacheNodeType
         - UseCloudFrontBoolean
         - CloudFrontAcmCertificate
+        - CachePrefix
     - Label:
         default: Bastion Tier
       Parameters:
@@ -84,6 +85,8 @@ Metadata:
     ParameterLabels:
       BastionInstanceType:
         default: Bastion Instance Type
+      CachePrefix:
+        default: Prefix to name caching instances
       CloudFrontAcmCertificate:
         default: CloudFront Certificate ARN
       DatabaseCmk:
@@ -195,6 +198,9 @@ Parameters:
     AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
     Description: '[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the domain name you use below.'
     Type: String
+  CachePrefix:
+    Description: '[ Optional ] Prefix before caching instances (e.g. <CachePrefix>session and <CachePrefix>application'
+    Type: String
   CloudFrontAcmCertificate:
     AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
     Description: '[ Optional ] The AWS Certification Manager certificate ARN for the CloudFront distribution certificate - this certificate should be created in the us-east-1 (N. Virginia) region and must reference the Moodle domain name you use below.'
@@ -211,7 +217,7 @@ Parameters:
     Type: String
   DatabaseInstanceType:
     AllowedValues:
-      - db.t3.micro
+      - db.t3.small
       - db.r5.large
       - db.r5.xlarge
       - db.r5.2xlarge
@@ -751,7 +757,7 @@ Resources:
         Subnet:
           !GetAtt [ vpc, Outputs.DataSubnet ]
         ElastiCacheClusterName:
-          !Sub '${AWS::StackName}session'
+          !Sub '${CachePrefix}session'
         ElastiCacheNodeType:
           !Ref SessionCacheNodeType
         ElastiCacheSecurityGroup:
@@ -767,7 +773,7 @@ Resources:
         Subnet:
           !GetAtt [ vpc, Outputs.DataSubnet ]
         ElastiCacheClusterName:
-          !Sub '${AWS::StackName}application'
+          !Sub '${CachePrefix}application'
         ElastiCacheNodeType:
           !Ref ApplicationCacheNodeType
         ElastiCacheSecurityGroup:

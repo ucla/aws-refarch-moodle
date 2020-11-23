@@ -197,12 +197,6 @@ Parameters:
       - i3.16xlarge
       - f1.2xlarge
       - f1.16xlarge
-      - g4.4xlarge
-      - g4.8xlarge
-      - g4.16xlarge
-      - p4.2xlarge
-      - p4.8xlarge
-      - p4.16xlarge
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
     Default: t3.large
     Description: The Amazon EC2 instance type for your web instances.
@@ -434,7 +428,7 @@ Resources:
         install_webserver:
           files:
             /tmp/create_site_conf.sh:
-              content: !Sub |
+              content: |
                 #!/bin/bash -xe
                 amazon-linux-extras install -y php7.3
                 yum install -y awslogs httpd mysql php-gd php-soap php-intl php-mbstring php-xmlrpc php-zip
@@ -620,7 +614,7 @@ Resources:
               group: root
 
             /tmp/install_moodle.sh:
-              content:  !Sub |
+              content: |
                 #!/bin/bash -xe
                 wget -O /tmp/moodle.tgz https://download.moodle.org/download.php/direct/stable310/moodle-3.10.tgz
                 tar -xvzf /tmp/moodle.tgz --strip-components=1 -C /var/www/moodle/html/
@@ -643,8 +637,7 @@ Resources:
               gcc-c++: []
           files:
             /tmp/install_cacheclient.sh:
-              content:
-                !Sub |
+              content: |
                   #!/bin/bash -xe
 
                   #Install memcached and then remove it. Memcached is not actually needed. We install amazon-elasticache-cluster-client.so instead. However Moodle does not detect memcached is installed. Therefore, this tricks Moodle into thinking it is installed.
@@ -677,8 +670,7 @@ Resources:
               php-opcache: []
           files:
             /tmp/install_opcache.sh:
-              content:
-                !Sub |
+              content: |
                   #!/bin/bash -xe
                   # create hidden opcache directory locally & change owner to apache
                   if [ ! -d /var/www/.opcache ]; then

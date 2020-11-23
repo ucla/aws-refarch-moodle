@@ -3,9 +3,11 @@ project:  # Project specific configuration section
   name:  aws-refarch-moodle
   parameters:
     AvailabilityZones: us-west-2a,us-west-2b
+    CachePrefix: 'ccle-dr'
     CloudFrontAcmCertificate: ''
     DatabaseCmk: ''
     DatabaseEncrpytedBoolean: 'true'
+    DatabaseInstanceType: 'db.r5.large'
     DataSubnet0Cidr: '10.0.100.0/24'
     DataSubnet1Cidr: '10.0.101.0/24'
     DataSubnet2Cidr: '10.0.102.0/24'
@@ -29,7 +31,7 @@ project:  # Project specific configuration section
     UseApplicationCacheBoolean: 'true'
     UseCloudFrontBoolean: 'true'
     UseRoute53Boolean: 'false'
-    UseSessionCacheBoolean: 'true'
+    UseSessionCacheBoolean: 'false'
     VpcCidr: '10.0.0.0/16'
     WebAsgMax: 4
     WebInstanceType: c5.xlarge
@@ -51,14 +53,16 @@ project:  # Project specific configuration section
   # defined, template is optional in tests
   template: ./templates/00-master.yaml
 tests:  # Test definition section
-  my-test:
+  test:
     # Parameter key-values to pass to CloudFormation, override parameters
     # provided in project section
     parameters:
       ApplicationCacheNodeType: cache.t3.micro
       AvailabilityZones: us-west-2c,us-west-2d
-      DatabaseInstanceType: db.t3.micro
+      CachePrefix: 'ccle-dr-test'
+      DatabaseInstanceType: db.t3.small
       EfsGrowthInstanceType: t3.micro
+      UseApplicationCacheBoolean: 'false'
       UseSessionCacheBoolean: 'false'
       WebAsgMax: 1
       WebInstanceType: t3.micro
