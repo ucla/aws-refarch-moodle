@@ -3,7 +3,7 @@ project:  # Project specific configuration section
   name:  aws-refarch-moodle
   parameters:
     AvailabilityZones: us-west-2a,us-west-2b
-    CachePrefix: 'ccle-dr'
+    CachePrefix: 'ccle'
     CloudFrontAcmCertificate: ''
     DatabaseCmk: ''
     DatabaseEncrpytedBoolean: 'true'
@@ -59,7 +59,7 @@ tests:  # Test definition section
     parameters:
       ApplicationCacheNodeType: cache.t2.micro
       AvailabilityZones: us-west-2c,us-west-2d
-      CachePrefix: 'ccle-dr-test'
+      CachePrefix: 'ccle-test'
       DatabaseInstanceType: db.r4.large
       EfsGrowthInstanceType: t2.micro
       UseApplicationCacheBoolean: 'false'

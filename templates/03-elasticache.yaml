@@ -30,7 +30,7 @@ Metadata:
 Parameters:
 
   ElastiCacheClusterName:
-    AllowedPattern: ^([a-zA-Z0-9]*)$
+    AllowedPattern: ^([a-zA-Z0-9\-]*)$
     Description: The ElastiCache cluster name. Defaults to the Amazon RDS database name.
     Type: String
   ElastiCacheNodeType:
@@ -74,7 +74,7 @@ Parameters:
     - 6
     Default: 3
     Description: Number of subnets. This must match your selections in the list of subnets below.
-    Type: String 
+    Type: String
   Subnet:
     Description: Select existing subnets. The number selected must match the number of subnets above. Subnets selected must be in separate AZs.
     Type: List<AWS::EC2::Subnet::Id>
@@ -136,13 +136,13 @@ Resources:
         - Key: Name
           Value: !Join [ '', [ 'Moodle / ', !Ref 'AWS::StackName' ] ]
       VpcSecurityGroupIds:
-      - !Ref ElastiCacheSecurityGroup       
-  ElastiCacheSubnetGroup: 
+      - !Ref ElastiCacheSecurityGroup
+  ElastiCacheSubnetGroup:
     Type: AWS::ElastiCache::SubnetGroup
-    Properties: 
+    Properties:
       CacheSubnetGroupName: !Join [ '', [ !Ref ElastiCacheClusterName, SubnetGroup ] ]
       Description: ElastiCache Subnet Group for Moodle
-      SubnetIds: 
+      SubnetIds:
         !If
           [ NumberOfSubnets1,
           [ !Select [ 0, !Ref Subnet ] ],

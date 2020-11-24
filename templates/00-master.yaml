@@ -85,6 +85,8 @@ Metadata:
     ParameterLabels:
       BastionInstanceType:
         default: Bastion Instance Type
+      CachePrefix:
+        default: Prefix to name caching instances
       CloudFrontAcmCertificate:
         default: CloudFront Certificate ARN
       DatabaseCmk:
@@ -284,6 +286,9 @@ Parameters:
   PublicAlbAcmCertificate:
     AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
     Description: '[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the domain name you use below.'
+    Type: String
+  CachePrefix:
+    Description: '[ Optional ] Prefix before caching instances (e.g. <CachePrefix>session and <CachePrefix>application'
     Type: String
   CloudFrontAcmCertificate:
     AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
@@ -965,7 +970,7 @@ Resources:
         Subnet:
           !GetAtt [ vpc, Outputs.DataSubnet ]
         ElastiCacheClusterName:
-          !Sub '${AWS::StackName}session'
+          !Sub '${CachePrefix}session'
         ElastiCacheNodeType:
           !Ref SessionCacheNodeType
         ElastiCacheSecurityGroup:
@@ -982,7 +987,7 @@ Resources:
         Subnet:
           !GetAtt [ vpc, Outputs.DataSubnet ]
         ElastiCacheClusterName:
-          !Sub '${AWS::StackName}application'
+          !Sub '${CachePrefix}application'
         ElastiCacheNodeType:
           !Ref ApplicationCacheNodeType
         ElastiCacheSecurityGroup:
