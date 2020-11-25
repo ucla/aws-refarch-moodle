@@ -3,6 +3,7 @@ project:  # Project specific configuration section
   name:  aws-refarch-moodle
   parameters:
     AvailabilityZones: us-west-2a,us-west-2b
+    BastionInstanceType: t2.nano
     CachePrefix: 'ccle'
     CloudFrontAcmCertificate: ''
     DatabaseCmk: ''
