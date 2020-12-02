@@ -1,0 +1,75 @@
+project:  # Project specific configuration section
+  # Project name, used as s3 key prefix when uploading objects
+  name:  aws-refarch-moodle
+  parameters:
+    AvailabilityZones: us-west-2a,us-west-2b
+    BastionInstanceType: t2.nano
+    CachePrefix: 'ccle'
+    CloudFrontAcmCertificate: ''
+    DatabaseCmk: ''
+    DatabaseEncrpytedBoolean: 'true'
+    DatabaseInstanceType: 'db.r4.large'
+    DataSubnet0Cidr: '10.0.100.0/24'
+    DataSubnet1Cidr: '10.0.101.0/24'
+    DataSubnet2Cidr: '10.0.102.0/24'
+    DataSubnet3Cidr: '10.0.103.0/24'
+    DataSubnet4Cidr: '10.0.104.0/24'
+    DataSubnet5Cidr: '10.0.105.0/24'
+    DomainName: ''
+    EC2KeyName: CCLE-DR
+    EfsCmk: ''
+    EfsEncrpytedBoolean: 'true'
+    HostedZoneName: ''
+    NumberOfAZs: 2
+    PublicAlbAcmCertificate: ''
+    PublicSubnet0Cidr: '10.0.200.0/24'
+    PublicSubnet1Cidr: '10.0.201.0/24'
+    PublicSubnet2Cidr: '10.0.202.0/24'
+    PublicSubnet3Cidr: '10.0.203.0/24'
+    PublicSubnet4Cidr: '10.0.204.0/24'
+    PublicSubnet5Cidr: '10.0.205.0/24'
+    UseRoute53Boolean: false
+    UseApplicationCacheBoolean: 'true'
+    UseCloudFrontBoolean: 'true'
+    UseRoute53Boolean: 'false'
+    UseSessionCacheBoolean: 'false'
+    VpcCidr: '10.0.0.0/16'
+    WebAsgMax: 4
+    WebInstanceType: c4.xlarge
+    WebSubnet0Cidr: '10.0.0.0/22'
+    WebSubnet1Cidr: '10.0.4.0/22'
+    WebSubnet2Cidr: '10.0.8.0/22'
+    WebSubnet3Cidr: '10.0.12.0/22'
+    WebSubnet4Cidr: '10.0.16.0/22'
+    WebSubnet5Cidr: '10.0.20.0/22'
+  regions: # List of AWS regions
+    - us-west-2
+  # Name of S3 bucket to upload project to
+  s3_bucket: cat-ccle-aws-refarch-moodle
+  # ACL for uploaded s3 objects, defaults to 'private'
+  s3_object_acl: public-read
+  tags:  # Tags to apply to CloudFormation template
+    MyTagKey: ccle-dr
+  # Path to template file relative to the project config file path. If
+  # defined, template is optional in tests
+  template: ./templates/00-master.yaml
+tests:  # Test definition section
+  test:
+    # Parameter key-values to pass to CloudFormation, override parameters
+    # provided in project section
+    parameters:
+      ApplicationCacheNodeType: cache.t2.micro
+      AvailabilityZones: us-west-2c,us-west-2d
+      CachePrefix: 'ccle-test'
+      DatabaseInstanceType: db.r4.large
+      EfsGrowthInstanceType: t2.micro
+      UseApplicationCacheBoolean: 'false'
+      UseSessionCacheBoolean: 'false'
+      WebAsgMax: 1
+      WebInstanceType: t2.micro
+    # List of AWS regions, will override any regions defined in project
+    regions:
+      - us-west-2
+    s3_bucket: cat-ccle-aws-refarch-moodle-test
+    tags:  # Tags to apply to CloudFormation template
+      MyTagKey: ccle-dr-test
