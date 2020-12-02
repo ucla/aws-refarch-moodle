@@ -14,7 +14,7 @@ project:
     CloudFrontAcmCertificate: ''
     DatabaseCmk: 'arn:aws:kms:us-east-2:897664914431:key/4f7b1258-ae52-4152-8f9e-8e9927cea2be'
     DatabaseEncrpytedBoolean: 'true'
-    DatabaseInstanceType: 'db.r4.large'
+    DatabaseInstanceType: 'db.r5.8xlarge'
     DomainName: 'staging.lms.sharepointoscar.com'
     EC2KeyName: moodle_bastion
     EfsCmk: 'arn:aws:kms:us-east-2:897664914431:key/4f7b1258-ae52-4152-8f9e-8e9927cea2be'
@@ -32,7 +32,7 @@ project:
     UseSessionCacheBoolean: 'false'
     WebAsgMax: 2
     WebAsgMin: 2
-    WebInstanceType: t2.xlarge
+    WebInstanceType: m5.2xlarge
 tests:
   defaults:
     parameters:
@@ -40,5 +40,8 @@ tests:
       QSS3BucketName: 'moodle-templates'
       QSS3BucketRegion: 'us-east-2'
       QSS3KeyPrefix: 'aws-refarch-moodle/'
+      VpcId: 'vpc-02e8a3a39219fff28'
+      PrivateSubnets: subnet-0b10052227f40754f,subnet-05bb8a5e8d03cfbf7
+      PublicSubnets: subnet-02348cff86f11fc87,subnet-0e4ac7cc5c2173ec8
     regions:
       - us-east-2
