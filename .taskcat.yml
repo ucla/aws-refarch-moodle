@@ -2,6 +2,7 @@ project:  # Project specific configuration section
   # Project name, used as s3 key prefix when uploading objects
   name:  aws-refarch-moodle
   parameters:
+    AvailabilityZones: $[taskcat_genaz_2]
     BastionInstanceType: t2.nano
     CachePrefix: 'ccle'
     CloudFrontAcmCertificate: ''
@@ -13,6 +14,7 @@ project:  # Project specific configuration section
     EfsCmk: ''
     EfsEncrpytedBoolean: 'true'
     HostedZoneName: ''
+    NumberOfAZs: 2
     PrivateSubnets: 'subnet-06a3baa880629ed73,subnet-0a64f75573465a5d7'
     PublicAlbAcmCertificate: ''
     PublicSubnets: 'subnet-0768522309f73972a,subnet-0e7454b0142913b70'
