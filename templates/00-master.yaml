@@ -1,7 +1,7 @@
 ---
 AWSTemplateFormatVersion: 2010-09-09
 
-Description: Stack to deploy a highly available, elastic, scalable Moodle environment. This master stack launches multiple nested stacks for different tiers. !! This can only be run in certain AWS Regions - 'us-east-1', 'us-east-2', 'us-west-2', 'eu-west-1'.
+Description: Stack to deploy a highly available, elastic, scalable Moodle environment. This master stack launches multiple nested stacks for different tiers. !! This can only be run in certain AWS Regions - 'us-east-1', 'us-west-2', 'us-west-2', 'eu-west-1'.
 
 
 
@@ -471,7 +471,7 @@ Resources:
           !Ref SshAccessCidr
         Vpc:
           !Ref VpcId
-      TemplateURL: https://cat-ccle-aws-refarch-moodle.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/02-securitygroups.yaml
+      TemplateURL: https://cat-ccle-aws-refarch-moodle-test.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/02-securitygroups.yaml
   bastion:
     DependsOn: securitygroups
     Type: AWS::CloudFormation::Stack
@@ -485,7 +485,7 @@ Resources:
           !Ref EC2KeyName
         Subnet:
           !Join [',', !Ref PublicSubnets]
-      TemplateURL: https://cat-ccle-aws-refarch-moodle.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/03-bastion.yaml
+      TemplateURL: https://cat-ccle-aws-refarch-moodle-test.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/03-bastion.yaml
   publicalb:
     DependsOn: securitygroups
     Type: AWS::CloudFormation::Stack
@@ -499,7 +499,7 @@ Resources:
           !GetAtt [ securitygroups, Outputs.PublicAlbSecurityGroup ]
         Vpc:
           !Ref VpcId
-      TemplateURL: https://cat-ccle-aws-refarch-moodle.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/03-publicalb.yaml
+      TemplateURL: https://cat-ccle-aws-refarch-moodle-test.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/03-publicalb.yaml
   rds:
     DependsOn: [ securitygroups ]
     Type: AWS::CloudFormation::Stack
@@ -521,7 +521,7 @@ Resources:
           !GetAtt [ securitygroups, Outputs.DatabaseSecurityGroup ]
         Subnet:
           !Join [',', !Ref PrivateSubnets]
-      TemplateURL: https://cat-ccle-aws-refarch-moodle.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/03-rds.yaml
+      TemplateURL: https://cat-ccle-aws-refarch-moodle-test.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/03-rds.yaml
   efsfilesystem:
     DependsOn: securitygroups
     Type: AWS::CloudFormation::Stack
@@ -543,7 +543,7 @@ Resources:
           !Ref EfsPerformanceMode
         Subnet:
           !Join [',', !Ref PrivateSubnets]
-      TemplateURL: https://cat-ccle-aws-refarch-moodle.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/03-efsfilesystem.yaml
+      TemplateURL: https://cat-ccle-aws-refarch-moodle-test.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/03-efsfilesystem.yaml
   sessioncache:
     Condition: DeployWithSessionCache
     DependsOn: securitygroups
@@ -558,7 +558,7 @@ Resources:
           !Ref SessionCacheNodeType
         ElastiCacheSecurityGroup:
           !GetAtt [ securitygroups, Outputs.ElastiCacheSecurityGroup ]
-      TemplateURL: https://cat-ccle-aws-refarch-moodle.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/03-elasticache.yaml
+      TemplateURL: https://cat-ccle-aws-refarch-moodle-test.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/03-elasticache.yaml
   applicationcache:
     Condition: DeployApplicationCache
     DependsOn: securitygroups
@@ -573,7 +573,7 @@ Resources:
           !Ref ApplicationCacheNodeType
         ElastiCacheSecurityGroup:
           !GetAtt [ securitygroups, Outputs.ElastiCacheSecurityGroup ]
-      TemplateURL: https://cat-ccle-aws-refarch-moodle.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/03-elasticache.yaml
+      TemplateURL: https://cat-ccle-aws-refarch-moodle-test.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/03-elasticache.yaml
   webnocache:
     DependsOn: [ publicalb, rds, efsfilesystem ]
     Condition: DeployWithoutSessionCache
@@ -614,7 +614,7 @@ Resources:
           !Ref MoodleLocale
         ElastiCacheClusterEndpointAddress:
           ''
-      TemplateURL: https://cat-ccle-aws-refarch-moodle.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/04-web.yaml
+      TemplateURL: https://cat-ccle-aws-refarch-moodle-test.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/04-web.yaml
   webcached:
     DependsOn: [ publicalb, rds, efsfilesystem, sessioncache ]
     Condition: DeployWithSessionCache
@@ -655,7 +655,7 @@ Resources:
           !Ref MoodleLocale
         ElastiCacheClusterEndpointAddress:
           !GetAtt sessioncache.Outputs.ElastiCacheClusterEndpointAddress
-      TemplateURL: https://cat-ccle-aws-refarch-moodle.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/04-web.yaml
+      TemplateURL: https://cat-ccle-aws-refarch-moodle-test.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/04-web.yaml
   cloudfront:
     Condition: DeployCloudFront
     DependsOn: publicalb
@@ -668,7 +668,7 @@ Resources:
           !GetAtt [ publicalb, Outputs.PublicAlbDnsName ]
         DomainName:
           !Ref DomainName
-      TemplateURL: https://cat-ccle-aws-refarch-moodle.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/04-cloudfront.yaml
+      TemplateURL: https://cat-ccle-aws-refarch-moodle-test.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/04-cloudfront.yaml
   route53:
     Condition: DeployRoute53
     DependsOn: publicalb
@@ -683,7 +683,7 @@ Resources:
           !Ref HostedZoneName
         DomainName:
           !Ref DomainName
-      TemplateURL: https://cat-ccle-aws-refarch-moodle.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/05-route53.yaml
+      TemplateURL: https://cat-ccle-aws-refarch-moodle-test.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/05-route53.yaml
 
 Outputs:
   DnsName:
