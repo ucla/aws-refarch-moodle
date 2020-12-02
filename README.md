@@ -30,6 +30,11 @@ update mdl_user set lastip='<ip address>';
 
 You can launch this CloudFormation stack, using your account, in the following AWS Regions. The template will work in other regions as Aurora PostgreSQL is deployed globally.
 
+https://us-east-2.console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/create/template?stackName=themood&templateURL=https://moodle-templates.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/01-existingvpc.yaml
+
+
+https://us-east-2.console.aws.amazon.com/cloudformation/home?region=us-east-2#/stacks/create/template?stackName=themood&templateURL=https://moodle-templates.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/00-master.yaml
+
 | AWS Region Code | Name | Launch |
 | --- | --- | ---
 | us-east-1 |US East (N. Virginia)| [![cloudformation-launch-stack](images/cloudformation-launch-stack.png)](https://console.aws.amazon.com/cloudformation/home?region=us-east-1#/stacks/new?stackName=Moodle&templateURL=https://cat-ccle-aws-refarch-moodle.s3-us-west-2.amazonaws.com/00-master.yaml) |
