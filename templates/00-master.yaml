@@ -19,28 +19,12 @@ Metadata:
     - Label:
         default: Network
       Parameters:
+        - VpcId
         - NumberOfAZs
-        - AvailabilityZones
-        - VpcCidr
+        - PublicSubnets
+        - PrivateSubnets
         - VpcTenancy
-        - PublicSubnet0Cidr
-        - PublicSubnet1Cidr
-        - PublicSubnet2Cidr
-        - PublicSubnet3Cidr
-        - PublicSubnet4Cidr
-        - PublicSubnet5Cidr
-        - WebSubnet0Cidr
-        - WebSubnet1Cidr
-        - WebSubnet2Cidr
-        - WebSubnet3Cidr
-        - WebSubnet4Cidr
-        - WebSubnet5Cidr
-        - DataSubnet0Cidr
-        - DataSubnet1Cidr
-        - DataSubnet2Cidr
-        - DataSubnet3Cidr
-        - DataSubnet4Cidr
-        - DataSubnet5Cidr
+ 
     - Label:
         default: File System Tier
       Parameters:
@@ -135,50 +119,15 @@ Metadata:
         default: Site Domain
       MoodleLocale:
         default: Language Code
-      AvailabilityZones:
-        default: Availability Zones
       NumberOfAZs:
         default: Number of Availability Zones
-      VpcCidr:
-        default: VpcCidr
+
       VpcTenancy:
         default: VpcTenancy
-      PublicSubnet0Cidr:
-        default: Public Subnet 0
-      PublicSubnet1Cidr:
-        default: Public Subnet 1
-      PublicSubnet2Cidr:
-        default: Public Subnet 2
-      PublicSubnet3Cidr:
-        default: Public Subnet 3
-      PublicSubnet4Cidr:
-        default: Public Subnet 4
-      PublicSubnet5Cidr:
-        default: Public Subnet 5
-      WebSubnet0Cidr:
-        default: Web Subnet 0
-      WebSubnet1Cidr:
-        default: Web Subnet 1
-      WebSubnet2Cidr:
-        default: Web Subnet 2
-      WebSubnet3Cidr:
-        default: Web Subnet 3
-      WebSubnet4Cidr:
-        default: Web Subnet 4
-      WebSubnet5Cidr:
-        default: Web Subnet 5
-      DataSubnet0Cidr:
-        default: Data Subnet 0
-      DataSubnet1Cidr:
-        default: Data Subnet 1
-      DataSubnet2Cidr:
-        default: Data Subnet 2
-      DataSubnet3Cidr:
-        default: Data Subnet 3
-      DataSubnet4Cidr:
-        default: Data Subnet 4
-      DataSubnet5Cidr:
-        default: Data Subnet 5
+      PublicSubnets:
+        default: Public Subnets
+      PrivateSubnets:
+        default: Private Subnets
       UseRoute53Boolean:
         default: Use Route 53
       UseCloudFrontBoolean:
@@ -525,13 +474,13 @@ Parameters:
   WebAsgMax:
     AllowedPattern: ^((?!0$)[1-2]?[0-9]|30)$
     ConstraintDescription: Must be a number between 1 and 30.
-    Default: 1
+    Default: 2
     Description: Specifies the maximum number of EC2 instances in the Web Autoscaling Group.
     Type: String
   WebAsgMin:
     AllowedPattern: ^([0-0]?[0-9]|10)$
     ConstraintDescription: Must be a number between 0 and 10.
-    Default: 1
+    Default: 2
     Description: Specifies the minimum number of EC2 instances in the Web Autoscaling Group.
     Type: String
   WebInstanceType:
@@ -656,12 +605,10 @@ Parameters:
     Description: Number of Availability Zones to use in the VPC. This must match your
       selections in the list of Availability Zones parameter.
     Type: Number
-  VpcCidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.0.0/16
-    Description: CIDR block for the VPC
-    Type: String
+  VpcId:
+    Type: "AWS::EC2::VPC::Id"
+    Description: Select an existing VPC
+    Default: ""
   VpcTenancy:
     AllowedValues:
     - default
@@ -669,114 +616,12 @@ Parameters:
     Default: default
     Description: The allowed tenancy of instances launched into the VPC
     Type: String
-  DataSubnet0Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.100.0/24
-    Description: CIDR block for data subnet 0 located in Availability Zone 0
-    Type: String
-  DataSubnet1Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.101.0/24
-    Description: CIDR block for data subnet 1 located in Availability Zone 1
-    Type: String
-  DataSubnet2Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.102.0/24
-    Description: CIDR block for data subnet 2 located in Availability Zone 2
-    Type: String
-  DataSubnet3Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.103.0/24
-    Description: CIDR block for data subnet 3 located in Availability Zone 3
-    Type: String
-  DataSubnet4Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.104.0/24
-    Description: CIDR block for data subnet 4 located in Availability Zone 4
-    Type: String
-  DataSubnet5Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.105.0/24
-    Description: CIDR block for data subnet 5 located in Availability Zone 5
-    Type: String
-  PublicSubnet0Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.200.0/24
-    Description: CIDR block for Public subnet 0 located in Availability Zone 0
-    Type: String
-  PublicSubnet1Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.201.0/24
-    Description: CIDR block for Public subnet 1 located in Availability Zone 1
-    Type: String
-  PublicSubnet2Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.202.0/24
-    Description: CIDR block for Public subnet 2 located in Availability Zone 2
-    Type: String
-  PublicSubnet3Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.203.0/24
-    Description: CIDR block for Public subnet 3 located in Availability Zone 3
-    Type: String
-  PublicSubnet4Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.204.0/24
-    Description: CIDR block for Public subnet 4 located in Availability Zone 4
-    Type: String
-  PublicSubnet5Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.205.0/24
-    Description: CIDR block for Public subnet 5 located in Availability Zone 5
-    Type: String
-  WebSubnet0Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.0.0/22
-    Description: CIDR block for Web subnet 0 located in Availability Zone 0
-    Type: String
-  WebSubnet1Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.4.0/22
-    Description: CIDR block for Web subnet 1 located in Availability Zone 1
-    Type: String
-  WebSubnet2Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.8.0/22
-    Description: CIDR block for Web subnet 2 located in Availability Zone 2
-    Type: String
-  WebSubnet3Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.12.0/22
-    Description: CIDR block for Web subnet 3 located in Availability Zone 3
-    Type: String
-  WebSubnet4Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.16.0/22
-    Description: CIDR block for Web subnet 4 located in Availability Zone 4
-    Type: String
-  WebSubnet5Cidr:
-    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
-    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
-    Default: 10.0.20.0/22
-    Description: CIDR block for Web subnet 5 located in Availability Zone 5
-    Type: String
+  PrivateSubnets:
+    Description: Private Subnet List
+    Type: List<AWS::EC2::Subnet::Id>
+  PublicSubnets:
+    Description: Public Subnet List
+    Type: List<AWS::EC2::Subnet::Id>
   UseCloudFrontBoolean:
     AllowedValues:
       - true
@@ -815,67 +660,17 @@ Resources:
         GenerateStringKey: 'password'
         PasswordLength: 16
         ExcludeCharacters: '"@/\'
-  vpc:
-    Type: AWS::CloudFormation::Stack
-    Properties:
-      Parameters:
-        NumberOfAZs:
-          !Ref NumberOfAZs
-        AvailabilityZones:
-          !Join
-            - ','
-            - !Ref AvailabilityZones
-        VpcCidr:
-          !Ref VpcCidr
-        VpcTenancy:
-          !Ref VpcTenancy
-        PublicSubnet0Cidr:
-          !Ref PublicSubnet0Cidr
-        PublicSubnet1Cidr:
-          !Ref PublicSubnet1Cidr
-        PublicSubnet2Cidr:
-          !Ref PublicSubnet2Cidr
-        PublicSubnet3Cidr:
-          !Ref PublicSubnet3Cidr
-        PublicSubnet4Cidr:
-          !Ref PublicSubnet4Cidr
-        PublicSubnet5Cidr:
-          !Ref PublicSubnet5Cidr
-        WebSubnet0Cidr:
-          !Ref WebSubnet0Cidr
-        WebSubnet1Cidr:
-          !Ref WebSubnet1Cidr
-        WebSubnet2Cidr:
-          !Ref WebSubnet2Cidr
-        WebSubnet3Cidr:
-          !Ref WebSubnet3Cidr
-        WebSubnet4Cidr:
-          !Ref WebSubnet4Cidr
-        WebSubnet5Cidr:
-          !Ref WebSubnet5Cidr
-        DataSubnet0Cidr:
-          !Ref DataSubnet0Cidr
-        DataSubnet1Cidr:
-          !Ref DataSubnet1Cidr
-        DataSubnet2Cidr:
-          !Ref DataSubnet2Cidr
-        DataSubnet3Cidr:
-          !Ref DataSubnet3Cidr
-        DataSubnet4Cidr:
-          !Ref DataSubnet4Cidr
-        DataSubnet5Cidr:
-          !Ref DataSubnet5Cidr
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/01-newvpc.yaml
+  
   securitygroups:
-    DependsOn: vpc
+    #DependsOn: !Ref VpcId
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
         SshAccessCidr:
           !Ref SshAccessCidr
         Vpc:
-          !GetAtt [ vpc, Outputs.Vpc ]
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/02-securitygroups.yaml
+          !Ref VpcId
+      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/02-securitygroups.yaml
   bastion:
     DependsOn: securitygroups
     Type: AWS::CloudFormation::Stack
@@ -890,8 +685,8 @@ Resources:
         NumberOfSubnets:
           !Ref NumberOfAZs
         Subnet:
-          !GetAtt [ vpc, Outputs.PublicSubnet ]
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/03-bastion.yaml
+          !Join [',', !Ref PublicSubnets]
+      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/03-bastion.yaml
   publicalb:
     DependsOn: securitygroups
     Type: AWS::CloudFormation::Stack
@@ -900,14 +695,14 @@ Resources:
         NumberOfSubnets:
           !Ref NumberOfAZs
         Subnet:
-          !GetAtt [ vpc, Outputs.PublicSubnet ]
+          !Join [',', !Ref PublicSubnets]
         PublicAlbAcmCertificate:
           !Ref PublicAlbAcmCertificate
         PublicAlbSecurityGroup:
           !GetAtt [ securitygroups, Outputs.PublicAlbSecurityGroup ]
         Vpc:
-          !GetAtt [ vpc, Outputs.Vpc ]
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/03-publicalb.yaml
+          !Ref VpcId
+      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/03-publicalb.yaml
   rds:
     DependsOn: [ securitygroups ]
     Type: AWS::CloudFormation::Stack
@@ -928,10 +723,10 @@ Resources:
         DatabaseSecurityGroup:
           !GetAtt [ securitygroups, Outputs.DatabaseSecurityGroup ]
         Subnet:
-          !GetAtt [ vpc, Outputs.DataSubnet ]
+          !Join [',', !Ref PrivateSubnets]
         NumberOfSubnets:
           !Ref NumberOfAZs
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/03-rds.yaml
+      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/03-rds.yaml
   efsfilesystem:
     DependsOn: securitygroups
     Type: AWS::CloudFormation::Stack
@@ -954,8 +749,8 @@ Resources:
         PerformanceMode:
           !Ref EfsPerformanceMode
         Subnet:
-          !GetAtt [ vpc, Outputs.DataSubnet ]
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/03-efsfilesystem.yaml
+          !Join [',', !Ref PrivateSubnets]
+      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/03-efsfilesystem.yaml
   sessioncache:
     Condition: DeployWithSessionCache
     DependsOn: securitygroups
@@ -963,7 +758,7 @@ Resources:
     Properties:
       Parameters:
         Subnet:
-          !GetAtt [ vpc, Outputs.DataSubnet ]
+          !Join [',', !Ref PrivateSubnets]
         ElastiCacheClusterName:
           !Sub '${AWS::StackName}session'
         ElastiCacheNodeType:
@@ -972,7 +767,7 @@ Resources:
           !GetAtt [ securitygroups, Outputs.ElastiCacheSecurityGroup ]
         NumberOfSubnets:
           !Ref NumberOfAZs
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/03-elasticache.yaml
+      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/03-elasticache.yaml
   applicationcache:
     Condition: DeployApplicationCache
     DependsOn: securitygroups
@@ -980,7 +775,7 @@ Resources:
     Properties:
       Parameters:
         Subnet:
-          !GetAtt [ vpc, Outputs.DataSubnet ]
+          !Join [',', !Ref PrivateSubnets]
         ElastiCacheClusterName: 
           !Sub '${AWS::StackName}application'
         ElastiCacheNodeType:
@@ -989,7 +784,7 @@ Resources:
           !GetAtt [ securitygroups, Outputs.ElastiCacheSecurityGroup ]
         NumberOfSubnets:
           !Ref NumberOfAZs
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/03-elasticache.yaml
+      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/03-elasticache.yaml
   webnocache:
     DependsOn: [ publicalb, rds, efsfilesystem ]
     Condition: DeployWithoutSessionCache
@@ -1025,14 +820,14 @@ Resources:
         WebSecurityGroup:
           !GetAtt [ securitygroups, Outputs.WebSecurityGroup ]
         Subnet:
-          !GetAtt [ vpc, Outputs.WebSubnet ]
+          !Join [',', !Ref PublicSubnets]
         DomainName:
           !Ref DomainName
         MoodleLocale:
           !Ref MoodleLocale
         ElastiCacheClusterEndpointAddress:
           ''
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/04-web.yaml
+      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/04-web.yaml
   webcached:
     DependsOn: [ publicalb, rds, efsfilesystem, sessioncache ]
     Condition: DeployWithSessionCache
@@ -1068,14 +863,14 @@ Resources:
         WebSecurityGroup:
           !GetAtt [ securitygroups, Outputs.WebSecurityGroup ]
         Subnet:
-          !GetAtt [ vpc, Outputs.WebSubnet ]
+          !Join [',', !Ref PublicSubnets]
         DomainName:
           !Ref DomainName
         MoodleLocale:
           !Ref MoodleLocale
         ElastiCacheClusterEndpointAddress:
           !GetAtt sessioncache.Outputs.ElastiCacheClusterEndpointAddress
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/04-web.yaml
+      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/04-web.yaml
   cloudfront:
     Condition: DeployCloudFront
     DependsOn: publicalb    
@@ -1088,7 +883,7 @@ Resources:
           !GetAtt [ publicalb, Outputs.PublicAlbDnsName ]
         DomainName:
           !Ref DomainName
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/04-cloudfront.yaml
+      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/04-cloudfront.yaml
   route53:
     Condition: DeployRoute53
     DependsOn: publicalb
@@ -1103,7 +898,7 @@ Resources:
           !Ref HostedZoneName
         DomainName:
           !Ref DomainName
-      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/05-route53.yaml
+      TemplateURL: https://moodle-templates.s3.us-east-2.amazonaws.com/aws-refarch-moodle/templates/05-route53.yaml
       
 Outputs:
   DnsName:
