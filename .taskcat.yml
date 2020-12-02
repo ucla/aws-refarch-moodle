@@ -8,7 +8,7 @@ project:  # Project specific configuration section
     CloudFrontAcmCertificate: ''
     DatabaseCmk: ''
     DatabaseEncrpytedBoolean: 'true'
-    DatabaseInstanceType: 'db.r4.large'
+    DatabaseInstanceType: 'db.r5.large'
     DataSubnet0Cidr: '10.0.100.0/24'
     DataSubnet1Cidr: '10.0.101.0/24'
     DataSubnet2Cidr: '10.0.102.0/24'
@@ -35,7 +35,7 @@ project:  # Project specific configuration section
     UseSessionCacheBoolean: 'false'
     VpcCidr: '10.0.0.0/16'
     WebAsgMax: 4
-    WebInstanceType: c4.xlarge
+    WebInstanceType: c5.xlarge
     WebSubnet0Cidr: '10.0.0.0/22'
     WebSubnet1Cidr: '10.0.4.0/22'
     WebSubnet2Cidr: '10.0.8.0/22'
@@ -58,15 +58,15 @@ tests:  # Test definition section
     # Parameter key-values to pass to CloudFormation, override parameters
     # provided in project section
     parameters:
-      ApplicationCacheNodeType: cache.t2.micro
+      ApplicationCacheNodeType: cache.t3.micro
       AvailabilityZones: us-west-2c,us-west-2d
       CachePrefix: 'ccle-test'
-      DatabaseInstanceType: db.r4.large
-      EfsGrowthInstanceType: t2.micro
+      DatabaseInstanceType: db.r5.large
+      EfsGrowthInstanceType: t3.micro
       UseApplicationCacheBoolean: 'false'
       UseSessionCacheBoolean: 'false'
       WebAsgMax: 1
-      WebInstanceType: t2.micro
+      WebInstanceType: t3.micro
     # List of AWS regions, will override any regions defined in project
     regions:
       - us-west-2
