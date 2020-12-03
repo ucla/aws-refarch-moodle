@@ -6,24 +6,24 @@ project:  # Project specific configuration section
     BastionInstanceType: t2.nano
     CachePrefix: 'ccle'
     CloudFrontAcmCertificate: ''
-    DatabaseCmk: ''
+    DatabaseCmk: 'arn:aws:kms:us-west-2:095974944794:key/dcd37fd9-8fbf-4342-81a8-548681df5ffa'
     DatabaseEncrpytedBoolean: 'true'
     DatabaseInstanceType: 'db.r5.large'
     DomainName: ''
     EC2KeyName: CCLE-DR
-    EfsCmk: ''
+    EfsCmk: 'arn:aws:kms:us-west-2:095974944794:key/80ef0149-36fc-4319-b99d-c876d68335fd'
     EfsEncrpytedBoolean: 'true'
     HostedZoneName: ''
     NumberOfAZs: 2
-    PrivateSubnets: 'subnet-06a3baa880629ed73,subnet-0a64f75573465a5d7'
+    # PrivateSubnets: 'subnet-06a3baa880629ed73,subnet-0a64f75573465a5d7'
     PublicAlbAcmCertificate: ''
-    PublicSubnets: 'subnet-0768522309f73972a,subnet-0e7454b0142913b70'
+    # PublicSubnets: 'subnet-0768522309f73972a,subnet-0e7454b0142913b70'
     UseRoute53Boolean: false
     UseApplicationCacheBoolean: 'true'
     UseCloudFrontBoolean: 'true'
     UseRoute53Boolean: 'false'
     UseSessionCacheBoolean: 'false'
-    VpcId: 'vpc-0017b23ff4df82e53'
+    # VpcId: 'vpc-0017b23ff4df82e53'
     WebAsgMax: 4
     WebInstanceType: c5.xlarge
   regions: # List of AWS regions
@@ -46,8 +46,11 @@ tests:  # Test definition section
       CachePrefix: 'ccle-test'
       DatabaseInstanceType: db.r5.large
       EfsGrowthInstanceType: t3.micro
+      PrivateSubnets: 'subnet-01d8a7092b87ff57b,subnet-0d39c760e52360242'
+      PublicSubnets: 'subnet-02fb2e17a34aa3552,subnet-07cf697d8edc81669'
       UseApplicationCacheBoolean: 'false'
       UseSessionCacheBoolean: 'false'
+      VpcId: 'vpc-08c23a8a235ced46f'
       WebAsgMax: 1
       WebInstanceType: t3.micro
     # List of AWS regions, will override any regions defined in project
