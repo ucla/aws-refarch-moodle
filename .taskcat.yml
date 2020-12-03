@@ -2,46 +2,30 @@ project:  # Project specific configuration section
   # Project name, used as s3 key prefix when uploading objects
   name:  aws-refarch-moodle
   parameters:
-    AvailabilityZones: us-west-2a,us-west-2b
+    AvailabilityZones: $[taskcat_genaz_2]
     BastionInstanceType: t2.nano
     CachePrefix: 'ccle'
     CloudFrontAcmCertificate: ''
-    DatabaseCmk: ''
+    DatabaseCmk: 'arn:aws:kms:us-west-2:095974944794:key/dcd37fd9-8fbf-4342-81a8-548681df5ffa'
     DatabaseEncrpytedBoolean: 'true'
     DatabaseInstanceType: 'db.r5.large'
-    DataSubnet0Cidr: '10.0.100.0/24'
-    DataSubnet1Cidr: '10.0.101.0/24'
-    DataSubnet2Cidr: '10.0.102.0/24'
-    DataSubnet3Cidr: '10.0.103.0/24'
-    DataSubnet4Cidr: '10.0.104.0/24'
-    DataSubnet5Cidr: '10.0.105.0/24'
     DomainName: ''
     EC2KeyName: CCLE-DR
-    EfsCmk: ''
+    EfsCmk: 'arn:aws:kms:us-west-2:095974944794:key/80ef0149-36fc-4319-b99d-c876d68335fd'
     EfsEncrpytedBoolean: 'true'
     HostedZoneName: ''
     NumberOfAZs: 2
+    # PrivateSubnets: 'subnet-06a3baa880629ed73,subnet-0a64f75573465a5d7'
     PublicAlbAcmCertificate: ''
-    PublicSubnet0Cidr: '10.0.200.0/24'
-    PublicSubnet1Cidr: '10.0.201.0/24'
-    PublicSubnet2Cidr: '10.0.202.0/24'
-    PublicSubnet3Cidr: '10.0.203.0/24'
-    PublicSubnet4Cidr: '10.0.204.0/24'
-    PublicSubnet5Cidr: '10.0.205.0/24'
+    # PublicSubnets: 'subnet-0768522309f73972a,subnet-0e7454b0142913b70'
     UseRoute53Boolean: false
     UseApplicationCacheBoolean: 'true'
     UseCloudFrontBoolean: 'true'
     UseRoute53Boolean: 'false'
     UseSessionCacheBoolean: 'false'
-    VpcCidr: '10.0.0.0/16'
+    # VpcId: 'vpc-0017b23ff4df82e53'
     WebAsgMax: 4
     WebInstanceType: c5.xlarge
-    WebSubnet0Cidr: '10.0.0.0/22'
-    WebSubnet1Cidr: '10.0.4.0/22'
-    WebSubnet2Cidr: '10.0.8.0/22'
-    WebSubnet3Cidr: '10.0.12.0/22'
-    WebSubnet4Cidr: '10.0.16.0/22'
-    WebSubnet5Cidr: '10.0.20.0/22'
   regions: # List of AWS regions
     - us-west-2
   # Name of S3 bucket to upload project to
@@ -59,12 +43,14 @@ tests:  # Test definition section
     # provided in project section
     parameters:
       ApplicationCacheNodeType: cache.t3.micro
-      AvailabilityZones: us-west-2c,us-west-2d
       CachePrefix: 'ccle-test'
       DatabaseInstanceType: db.r5.large
       EfsGrowthInstanceType: t3.micro
+      PrivateSubnets: 'subnet-01d8a7092b87ff57b,subnet-0d39c760e52360242'
+      PublicSubnets: 'subnet-02fb2e17a34aa3552,subnet-07cf697d8edc81669'
       UseApplicationCacheBoolean: 'false'
       UseSessionCacheBoolean: 'false'
+      VpcId: 'vpc-08c23a8a235ced46f'
       WebAsgMax: 1
       WebInstanceType: t3.micro
     # List of AWS regions, will override any regions defined in project
