@@ -337,7 +337,7 @@ Parameters:
   WebAsgMin:
     AllowedPattern: ^([0-0]?[0-9]|10)$
     ConstraintDescription: Must be a number between 0 and 10.
-    Default: 2
+    Default: 1
     Description: Specifies the minimum number of EC2 instances in the Web Autoscaling Group.
     Type: String
   WebInstanceType:
@@ -636,7 +636,7 @@ Resources:
         WebSecurityGroup:
           !GetAtt [ securitygroups, Outputs.WebSecurityGroup ]
         Subnet:
-          !Join [',', !Ref PublicSubnets]
+          !Join [',', !Ref PrivateSubnets]
         DomainName:
           !Ref DomainName
         MoodleLocale:
@@ -679,7 +679,7 @@ Resources:
         WebSecurityGroup:
           !GetAtt [ securitygroups, Outputs.WebSecurityGroup ]
         Subnet:
-          !Join [',', !Ref PublicSubnets]
+          !Join [',', !Ref PrivateSubnets]
         DomainName:
           !Ref DomainName
         MoodleLocale:

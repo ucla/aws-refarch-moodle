@@ -339,7 +339,7 @@ Resources:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       Cooldown: '60'
-      HealthCheckGracePeriod: 3500
+      HealthCheckGracePeriod: 150
       HealthCheckType: ELB
       LaunchConfigurationName: !Ref WebLaunchConfiguration
       MaxSize: !Ref WebAsgMax
@@ -437,6 +437,7 @@ Resources:
             - install_moodle
             - install_cacheclient
             - install_opcache
+            - install_odbc
             - start_webserver
 
         install_webserver:
@@ -678,7 +679,6 @@ Resources:
                       touch /etc/php.d/50-memcached.ini
                   fi
                   echo 'extension=/usr/lib64/php/modules/amazon-elasticache-cluster-client.so;' >> /etc/php.d/50-memcached.ini
-                  echo 'extension=igbinary.so;' >> /etc/php.d/50-memcached.ini
 
                   #update Moodle source to use DYNAMIC_CLIENT_MODE so Moodle can detect changes to the elasticache cluster membership
                   sed -i '/\$this->options\[Memcached::OPT_BUFFER_WRITES\] = \$bufferwrites;/a \ \ \ \ \ \ \ \ $this->options[Memcached::OPT_CLIENT_MODE] = Memcached::DYNAMIC_CLIENT_MODE;' /var/www/moodle/html/cache/stores/memcached/lib.php
@@ -719,6 +719,53 @@ Resources:
           commands:
             install_opcache:
               command: ./install_opcache.sh
+              cwd: /tmp
+              ignoreErrors: false
+        install_odbc:
+          files:
+            /tmp/install_odbc.sh:
+              content: |
+                  #!/bin/bash -xe
+                  amazon-linux-extras install epel -y
+                  yum install -y unixODBC unixODBC-devel freetds php-odbc
+
+                  # Add FreeTDS driver info to the odbcinst.ini file
+                  echo "" >> /etc/odbcinst.ini
+                  echo "[FreeTDS]" >> /etc/odbcinst.ini
+                  echo "Driver = /usr/lib64/libtdsodbc.so.0" >> /etc/odbcinst.ini
+                  echo "UsageCount = 1" >> /etc/odbcinst.ini
+              mode: 000500
+              owner: root
+              group: root
+            /etc/freetds.conf:
+              content: |
+                [global]
+                  # TDS protocol version
+                  tds version = auto
+                [REGISTRAR]
+                    host = srdb.registrar.ucla.edu
+                    port = 1433
+                    tds version = auto
+              mode: '000644'
+              owner: root
+              group: root
+            /etc/odbc.ini:
+              content: |
+                [REGISTRAR]
+                Driver = FreeTDS
+                Description = UCLA Registrar (SRDB)
+                Trace = No
+                Server = srdb.registrar.ucla.edu
+                Port = 1433
+                TDS_Version = auto
+                Database = srdb_sr2
+                TextSize = 64512
+              mode: '000644'
+              owner: root
+              group: root
+          commands:
+            install_odbc:
+              command: ./install_odbc.sh
               cwd: /tmp
               ignoreErrors: false
         start_webserver:

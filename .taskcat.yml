@@ -52,6 +52,7 @@ tests:  # Test definition section
       UseSessionCacheBoolean: 'false'
       VpcId: 'vpc-08c23a8a235ced46f'
       WebAsgMax: 1
+      WebAsgMin: 1
       WebInstanceType: t3.micro
     # List of AWS regions, will override any regions defined in project
     regions:
