@@ -8,17 +8,6 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
-      # Need to make main S3 bucket have template files for taskcat to work
-      - name: Sync templates to S3
-        uses: jakejarvis/s3-sync-action@master
-        with:
-          args: --acl public-read --delete
-        env:
-          AWS_S3_BUCKET: ${{ secrets.AWS_S3_BUCKET }}
-          AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
-          AWS_REGION: 'us-west-2'
-          SOURCE_DIR: 'templates'
       - uses: actions/setup-python@v2
       - name: Configure AWS Credentials
         uses: aws-actions/configure-aws-credentials@v1
