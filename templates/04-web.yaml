@@ -101,6 +101,8 @@ Parameters:
   #   Type: String
   MyRDSInstanceSecretArn:
     Type: String
+  MoodleConfigSecretArn:
+    Type: String
   DatabaseName:
     AllowedPattern: ^([a-zA-Z0-9]*)$
     Description: The Amazon RDS master database name.
@@ -330,6 +332,7 @@ Resources:
             - secretsmanager:GetSecretValue
             Resource:
             - !Ref MyRDSInstanceSecretArn
+            - !Ref MoodleConfigSecretArn
   Logs:
       Type: AWS::Logs::LogGroup
       DeletionPolicy: Retain
@@ -555,9 +558,28 @@ Resources:
               command: ./download_aws_ini.sh
               cwd: /tmp
               ignoreErrors: true
+        install_codedeploy:
+          files:
+            /tmp/install_codedeploy.sh:
+              content: |
+                #!/bin/bash
+                yum install -y ruby
+                cd /home/ec2-user
+                wget https://aws-codedeploy-us-west-2.s3.us-west-2.amazonaws.com/latest/install
+                chmod +x ./install
+                ./install auto
+                service codedeploy-agent start
+              mode: 000500
+              owner: root
+              group: root
+          commands:
+            install_codedeploy:
+              command: ./install_codedeploy.sh
+              cwd: /tmp
+              ignoreErrors: false
         install_moodle:
           files:
-            /tmp/config.php:
+            /tmp/config_private.php:
               content: !Sub |
                   <?php
                   require 'lib/aws.phar';
@@ -629,24 +651,46 @@ Resources:
                     $CFG->session_memcached_lock_expire = 7100;
                     $CFG->session_memcached_lock_retry_sleep = 150;
                   }
-                  @error_reporting(E_ALL | E_STRICT);   // NOT FOR PRODUCTION SERVERS!
-                  @ini_set('display_errors', '1');         // NOT FOR PRODUCTION SERVERS!
-                  $CFG->debug = (E_ALL | E_STRICT);   // === DEBUG_DEVELOPER - NOT FOR PRODUCTION SERVERS!
-                  $CFG->debugdisplay = 1;
+
+                  $CFG->forced_plugin_settings['tool_uclacoursecreator']['email_template_dir'] = '/var/www/moodle/ccle_email_templates/course_creator';
+
+                  // Set additional secrets
+                  try {
+                      $result = $client->getSecretValue([
+                          'SecretId' => '${MoodleConfigSecretArn}',
+                      ]);
+                      $secrets = json_decode($result['SecretString']);
+                      $CFG->passwordsaltmain = $secrets->passwordsaltmain;
+                      $CFG->registrar_dbuser = $secrets->registrar_dbuser;
+                      $CFG->registrar_dbpass = $secrets->registrar_dbpass;
+                      $CFG->forced_plugin_settings['block_ucla_help']['jira_user'] = $secrets->jira_user;
+                      $CFG->forced_plugin_settings['block_ucla_help']['jira_password'] = $secrets->jira_password;
+                      $CFG->forced_plugin_settings['block_ucla_help']['jira_pid'] = $secrets->jira_pid;
+                      $CFG->forced_plugin_settings['block_iclicker']['block_iclicker_sso_shared_key'] = $secrets->block_iclicker_sso_shared_key;
+                      $CFG->forced_plugin_settings['local_kaltura']['partner_id'] = $secrets->kaltura_partner_id;
+                      $CFG->forced_plugin_settings['local_kaltura']['adminsecret'] = $secrets->kaltura_adminsecret;
+                      $CFG->mylabmastering_key = $secrets->mylabmastering_key;
+                      $CFG->mylabmastering_secret = $secrets->mylabmastering_secret;
+                      $CFG->forced_plugin_settings['mod_zoom']['apikey'] = $secrets->zoom_apikey;
+                      $CFG->forced_plugin_settings['mod_zoom']['apisecret'] = $secrets->zoom_apisecret;
+                      $CFG->forced_plugin_settings['turnitintooltwo']['accountid'] = $secrets->turnitin_accountid;
+                      $CFG->forced_plugin_settings['turnitintooltwo']['secretkey'] = $secrets->turnitin_secretkey;
+                      $CFG->filter_poodll_registrationkey = $secrets->filter_poodll_registrationkey;
+                      $CFG->forced_plugin_settings['block_ucla_media']['bruincast_user'] = $secrets->bruincast_user;
+                      $CFG->forced_plugin_settings['block_ucla_media']['bruincast_pass'] = $secrets->bruincast_pass;
+                  } catch (AwsException $e) {
+                      $error = $e->getAwsErrorCode();
+                  }
+
                   require_once(__DIR__ . '/lib/setup.php');
-                  // END OF CONFIG //
-                  ?>
               mode: '000755'
               owner: root
               group: root
 
-            /tmp/install_moodle.sh:
-              content:  !Sub |
+            /tmp/codedeploy_placeholder.sh:
+              content: |
                 #!/bin/bash -xe
-                wget -O /tmp/moodle.tgz https://download.moodle.org/download.php/direct/stable310/moodle-3.10.tgz
-                tar -xvzf /tmp/moodle.tgz --strip-components=1 -C /var/www/moodle/html/
-                wget -O /var/www/moodle/html/lib/aws.phar https://docs.aws.amazon.com/aws-sdk-php/v3/download/aws.phar
-                cp /tmp/config.php /var/www/moodle/html/config.php
+                echo "Placeholder for CodeDeploy" > /var/www/moodle/html/README.txt
                 chown -R root:apache /var/www/moodle/html
                 chown -R apache:apache /var/www/moodle/local
 
@@ -654,8 +698,8 @@ Resources:
               owner: root
               group: root
           commands:
-            install_moodle:
-              command: ./install_moodle.sh
+            codedeploy_placeholder:
+              command: ./codedeploy_placeholder.sh
               cwd: /tmp
               ignoreErrors: false
         install_cacheclient:
@@ -680,8 +724,9 @@ Resources:
                   fi
                   echo 'extension=/usr/lib64/php/modules/amazon-elasticache-cluster-client.so;' >> /etc/php.d/50-memcached.ini
 
-                  #update Moodle source to use DYNAMIC_CLIENT_MODE so Moodle can detect changes to the elasticache cluster membership
-                  sed -i '/\$this->options\[Memcached::OPT_BUFFER_WRITES\] = \$bufferwrites;/a \ \ \ \ \ \ \ \ $this->options[Memcached::OPT_CLIENT_MODE] = Memcached::DYNAMIC_CLIENT_MODE;' /var/www/moodle/html/cache/stores/memcached/lib.php
+                  # Commenting out since this will be done in the code instead.
+                  ##update Moodle source to use DYNAMIC_CLIENT_MODE so Moodle can detect changes to the elasticache cluster membership
+                  #sed -i '/\$this->options\[Memcached::OPT_BUFFER_WRITES\] = \$bufferwrites;/a \ \ \ \ \ \ \ \ $this->options[Memcached::OPT_CLIENT_MODE] = Memcached::DYNAMIC_CLIENT_MODE;' /var/www/moodle/html/cache/stores/memcached/lib.php
 
               mode: 000500
               owner: root
