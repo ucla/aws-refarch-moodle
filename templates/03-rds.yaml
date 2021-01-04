@@ -153,6 +153,7 @@ Conditions:
 Resources:
   DatabaseCluster:
     Type: AWS::RDS::DBCluster
+    DeletionPolicy: Delete
     Properties:
       BackupRetentionPeriod: 30
       DatabaseName: !Ref DatabaseName
