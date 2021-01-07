@@ -476,6 +476,21 @@ Resources:
         GenerateStringKey: 'password'
         PasswordLength: 16
         ExcludeCharacters: '"@/\'
+  MoodleConfigSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: 'Configuration secrets for Moodle'
+      GenerateSecretString:
+        SecretStringTemplate: '{"registrar_dbuser": "", "registrar_dbpass": "",
+            "jira_user": "", "jira_password": "", "jira_pid": "",
+            "block_iclicker_sso_shared_key": "", "kaltura_partner_id": "",
+            "kaltura_adminsecret": "", "mylabmastering_key": "",
+            "mylabmastering_secret": "", "zoom_apikey": "", "zoom_apisecret": "",
+            "filter_poodll_registrationkey": "", "bruincast_user": "", "bruincast_pass": "",
+            "turnitin_accountid": "", "turnitin_secretkey": ""}'
+        GenerateStringKey: 'passwordsaltmain'
+        PasswordLength: 32
+        ExcludeCharacters: '"@/\'
 
   securitygroups:
     #DependsOn: !Ref VpcId
@@ -613,6 +628,8 @@ Resources:
         #   !Ref DatabaseMasterUsername
         MyRDSInstanceSecretArn:
           !Ref MyRDSInstanceSecret
+        MoodleConfigSecretArn:
+          !Ref MoodleConfigSecret
         DatabaseName:
           !Ref DatabaseName
         ElasticFileSystem:
@@ -656,6 +673,8 @@ Resources:
         #   !Ref DatabaseMasterUsername
         MyRDSInstanceSecretArn:
           !Ref MyRDSInstanceSecret
+        MoodleConfigSecretArn:
+          !Ref MoodleConfigSecret
         DatabaseName:
           !Ref DatabaseName
         ElasticFileSystem:
