@@ -437,6 +437,7 @@ Resources:
           deploy_webserver:
             - install_logs
             - install_webserver
+            - install_codedeploy
             - install_moodle
             - install_cacheclient
             - install_opcache
