@@ -379,6 +379,12 @@ Resources:
       ResourceSignal:
         Count: !Ref WebAsgMin
         Timeout: PT15M
+    UpdatePolicy:
+      AutoScalingRollingUpdate:
+        MaxBatchSize: 2
+        MinInstancesInService: !Ref WebAsgMin
+        WaitOnResourceSignals: true
+        PauseTime: PT15M
 
   ScaleUpPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
@@ -436,8 +442,8 @@ Resources:
         configSets:
           deploy_webserver:
             - install_logs
-            - install_webserver
             - install_codedeploy
+            - install_webserver
             - install_moodle
             - install_cacheclient
             - install_opcache
@@ -564,11 +570,13 @@ Resources:
             /tmp/install_codedeploy.sh:
               content: |
                 #!/bin/bash
+                echo "Installing CodeDeploy agent..."
                 yum install -y ruby
                 cd /home/ec2-user
                 wget https://aws-codedeploy-us-west-2.s3.us-west-2.amazonaws.com/latest/install
                 chmod +x ./install
                 ./install auto
+                echo "Starting CodeDeploy agent..."
                 service codedeploy-agent start
               mode: 000500
               owner: root
