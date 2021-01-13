@@ -692,7 +692,7 @@ Resources:
                   }
 
                   require_once(__DIR__ . '/lib/setup.php');
-              mode: '000755'
+              mode: '000640'
               owner: root
               group: root
 

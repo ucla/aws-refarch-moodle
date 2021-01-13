@@ -1,0 +1,19 @@
+version: 0.0
+os: linux
+hooks:
+  ApplicationStop:
+    - location: codedeploy/applicationstop.sh
+      timeout: 30
+      runas: root
+  BeforeInstall:
+    - location: codedeploy/beforeinstall.sh
+      timeout: 300
+      runas: root
+  AfterInstall:
+    - location: codedeploy/afterinstall.sh
+      timeout: 300
+      runas: root
+  ApplicationStart:
+    - location: codedeploy/applicationstart.sh
+      timeout: 30
+      runas: root
