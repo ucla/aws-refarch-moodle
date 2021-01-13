@@ -108,6 +108,17 @@ Parameters:
     Description: The Amazon RDS master database name.
     Type: String
     Default: moodle
+  DeploymentKey:
+    AllowedPattern: ^$|(arn:aws:secretsmanager:)([a-zA-Z0-9:-])*$
+    Description: '[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the domain name you use below.'
+    Type: String
+  DeploymentBranchCommitTag:
+    Description: The branch or commit id or tag to run on the EC2 instances
+    Type: String
+  Environment:
+    AllowedPattern: ^(dev|test|prod|stage)$
+    Description: Specify config file to use - dev, test, stage, prod
+    Type: String
   ElasticFileSystem:
     AllowedPattern: ^(fs-)([a-z0-9]{8}|[a-z0-9]{17})$
     Description: The Amazon EFS file system id.
@@ -333,6 +344,7 @@ Resources:
             Resource:
             - !Ref MyRDSInstanceSecretArn
             - !Ref MoodleConfigSecretArn
+            - !Ref DeploymentKey
   Logs:
       Type: AWS::Logs::LogGroup
       DeletionPolicy: Retain
@@ -385,6 +397,12 @@ Resources:
         MinInstancesInService: !Ref WebAsgMin
         WaitOnResourceSignals: true
         PauseTime: PT15M
+        SuspendProcesses:
+          - HealthCheck
+          - ReplaceUnhealthy
+          - AZRebalance
+          - AlarmNotification
+          - ScheduledActions
 
   ScaleUpPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
@@ -442,7 +460,7 @@ Resources:
         configSets:
           deploy_webserver:
             - install_logs
-            - install_codedeploy
+            - install_deploymentkey
             - install_webserver
             - install_moodle
             - install_cacheclient
@@ -565,25 +583,26 @@ Resources:
               command: ./download_aws_ini.sh
               cwd: /tmp
               ignoreErrors: true
-        install_codedeploy:
+        install_deploymentkey:
           files:
-            /tmp/install_codedeploy.sh:
-              content: |
-                #!/bin/bash
-                echo "Installing CodeDeploy agent..."
-                yum install -y ruby
-                cd /home/ec2-user
-                wget https://aws-codedeploy-us-west-2.s3.us-west-2.amazonaws.com/latest/install
-                chmod +x ./install
-                ./install auto
-                echo "Starting CodeDeploy agent..."
-                service codedeploy-agent start
-              mode: 000500
-              owner: root
-              group: root
+            /tmp/install_deploymentkey.sh:
+                content: !Sub |
+                  #!/bin/bash
+                  yum install -y jq
+
+                  echo "Installing deployment key..."
+                  aws configure set region ${AWS::Region}
+                  aws secretsmanager get-secret-value --secret-id ${DeploymentKey} | jq -r '.SecretString' > ~/.ssh/id_ed25519
+                  chmod 400 ~/.ssh/id_ed25519
+
+                  echo "Adding Github to knownhost list..."
+                  ssh-keyscan -H  github.com >>  ~/.ssh/known_hosts
+                mode: 000500
+                owner: root
+                group: root
           commands:
-            install_codedeploy:
-              command: ./install_codedeploy.sh
+            install_deploymentkey:
+              command: ./install_deploymentkey.sh
               cwd: /tmp
               ignoreErrors: false
         install_moodle:
@@ -692,14 +711,70 @@ Resources:
                   }
 
                   require_once(__DIR__ . '/lib/setup.php');
-              mode: '000755'
+              mode: '000640'
               owner: root
               group: root
 
-            /tmp/codedeploy_placeholder.sh:
-              content: |
+            /tmp/install_moodle.sh:
+              content: !Sub |
                 #!/bin/bash -xe
-                echo "Placeholder for CodeDeploy" > /var/www/moodle/html/README.txt
+
+                yum install -y git
+
+                if ! [ -d /var/www/moodle/html/.git ]; then
+                  echo "Checkout code from Github..."
+                  git clone git@github.com:ucla/moodle.git /var/www/moodle/html
+                fi
+
+                cd /var/www/moodle/html || exit 1
+
+                echo "Checking out ${DeploymentBranchCommitTag}..."
+                git checkout ${DeploymentBranchCommitTag}
+
+                if ! [ -f "/var/www/moodle/html/lib/aws.phar" ]; then
+                    echo "Downloading aws.phar..."
+                    wget -O /var/www/moodle/html/lib/aws.phar https://docs.aws.amazon.com/aws-sdk-php/v3/download/aws.phar
+                fi
+
+                echo "Updating moodle submodules..."
+                git submodule sync
+                git submodule update --init --recursive
+
+                echo "Installing composer..."
+                export COMPOSER_HOME="$HOME/.config/composer"
+                curl -sS http://getcomposer.org/installer | php
+
+                echo "Doing composer install..."
+                php composer.phar install
+
+                if [ -L "config.php" ]; then
+                    echo "Config symlink exists, no need to make a new one"
+                else
+                    echo "Using ${Environment} config file..."
+                    ln -s local/ucla/config/shared_${Environment}_moodle-config.php config.php
+                fi
+
+                if ! [ -f "config_private.php" ]; then
+                    if ! [ -f "/tmp/config_private.php" ]; then
+                        echo "File /tmp/config_private.php not found, try refreshing the instances"
+                        exit 1
+                    else
+                        echo "Copying config_private.php..."
+                        mv /tmp/config_private.php ./config_private.php
+                    fi
+                else
+                    echo "Config private exists, no need to make a new one"
+                fi
+
+                if ! [ -d /var/www/moodle/ccle_email_templates ]; then
+                    echo "Copying course creator email templates..."
+                    git clone https://github.com/ucla/ccle_email_templates.git /var/www/moodle/ccle_email_templates
+                else
+                    echo "Updating course creator email templates..."
+                    cd /var/www/moodle/ccle_email_templates || exit 1
+                    git pull
+                fi
+
                 chown -R root:apache /var/www/moodle/html
                 chown -R apache:apache /var/www/moodle/local
 
@@ -707,8 +782,8 @@ Resources:
               owner: root
               group: root
           commands:
-            codedeploy_placeholder:
-              command: ./codedeploy_placeholder.sh
+            install_moodle:
+              command: ./install_moodle.sh
               cwd: /tmp
               ignoreErrors: false
         install_cacheclient:

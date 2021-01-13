@@ -64,6 +64,9 @@ Metadata:
         default: Moodle
       Parameters:
         - MoodleLocale
+        - DeploymentKey
+        - DeploymentBranchCommitTag
+        - Environment
     ParameterLabels:
       BastionInstanceType:
         default: Bastion Instance Type
@@ -97,6 +100,12 @@ Metadata:
         default: EC2 Key Pair
       PublicAlbAcmCertificate:
         default: ALB Certificate ARN
+      DeploymentKey:
+        default: Deployment Key ARN
+      DeploymentBranchCommitTag:
+        default: DeploymentBranchCommitTag
+      Environment:
+        default: Environment
       SshAccessCidr:
         default: SSH Access From
       UseApplicationCacheBoolean:
@@ -141,6 +150,17 @@ Parameters:
   PublicAlbAcmCertificate:
     AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
     Description: '[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the domain name you use below.'
+    Type: String
+  DeploymentKey:
+    AllowedPattern: ^$|(arn:aws:secretsmanager:)([a-zA-Z0-9:-])*$
+    Description: 'The Secret Manager ARN for the private SSH key used for read-only deployments'
+    Type: String
+  DeploymentBranchCommitTag:
+    Description: The branch or commit id or tag to run on the EC2 instances
+    Type: String
+  Environment:
+    AllowedPattern: ^(dev|test|prod|stage)$
+    Description: Specify config file to use - dev, test, stage, prod
     Type: String
   CachePrefix:
     Description: '[ Optional ] Prefix before caching instances (e.g. <CachePrefix>session and <CachePrefix>application'
@@ -632,6 +652,12 @@ Resources:
           !Ref MoodleConfigSecret
         DatabaseName:
           !Ref DatabaseName
+        DeploymentKey:
+          !Ref DeploymentKey
+        DeploymentBranchCommitTag:
+          !Ref DeploymentBranchCommitTag
+        Environment:
+          !Ref Environment
         ElasticFileSystem:
           !GetAtt [ efsfilesystem, Outputs.ElasticFileSystem ]
         EC2KeyName:
@@ -677,6 +703,12 @@ Resources:
           !Ref MoodleConfigSecret
         DatabaseName:
           !Ref DatabaseName
+        DeploymentKey:
+          !Ref DeploymentKey
+        DeploymentBranchCommitTag:
+          !Ref DeploymentBranchCommitTag
+        Environment:
+          !Ref Environment
         ElasticFileSystem:
           !GetAtt [ efsfilesystem, Outputs.ElasticFileSystem ]
         EC2KeyName:

@@ -9,10 +9,13 @@ project:  # Project specific configuration section
     DatabaseCmk: 'arn:aws:kms:us-west-2:095974944794:key/dcd37fd9-8fbf-4342-81a8-548681df5ffa'
     DatabaseEncrpytedBoolean: 'true'
     DatabaseInstanceType: 'db.r5.large'
+    DeploymentBranchCommitTag: 'master'
+    DeploymentKey: 'arn:aws:secretsmanager:us-west-2:095974944794:secret:AWSCCLEDeploymentKey-WI4nl3'
     DomainName: ''
     EC2KeyName: CCLE-DR
     EfsCmk: 'arn:aws:kms:us-west-2:095974944794:key/80ef0149-36fc-4319-b99d-c876d68335fd'
     EfsEncrpytedBoolean: 'true'
+    Environment: 'stage'
     HostedZoneName: ''
     NumberOfAZs: 2
     # PrivateSubnets: 'subnet-06a3baa880629ed73,subnet-0a64f75573465a5d7'
