@@ -63,7 +63,9 @@ Metadata:
     - Label:
         default: Moodle
       Parameters:
-        - MoodleLocale
+        - DeploymentKey
+        - DeploymentBranchCommitTag
+        - Environment
     ParameterLabels:
       BastionInstanceType:
         default: Bastion Instance Type
@@ -83,6 +85,12 @@ Metadata:
       #   default: DB Master Password
       DatabaseName:
         default: DB Name
+      DeploymentBranchCommitTag:
+        default: DeploymentBranchCommitTag
+      DeploymentKey:
+        default: Deployment Key ARN
+      Environment:
+        default: Environment
       EfsCmk:
         default: AWS KMS CMK for EFS
       EfsEncrpytedBoolean:
@@ -117,8 +125,6 @@ Metadata:
         default: Hosted Zone
       DomainName:
         default: Site Domain
-      MoodleLocale:
-        default: Language Code
       PublicSubnets:
         default: Public Subnets
       PrivateSubnets:
@@ -199,6 +205,17 @@ Parameters:
     Description: The Amazon RDS master database name.
     Type: String
     Default: moodle
+  DeploymentBranchCommitTag:
+    Description: The branch or commit id or tag to run on the EC2 instances
+    Type: String
+  DeploymentKey:
+    AllowedPattern: ^$|(arn:aws:secretsmanager:)([a-zA-Z0-9:-])*$
+    Description: 'The Secret Manager ARN for the private SSH key used for read-only deployments'
+    Type: String
+  Environment:
+    AllowedPattern: ^(dev|test|prod|stage)$
+    Description: Specify config file to use - dev, test, stage, prod
+    Type: String
   EfsEncrpytedBoolean:
     AllowedValues:
       - true
@@ -409,10 +426,6 @@ Parameters:
     AllowedPattern: ^$|(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$
     Description: '[ Optional ] The main domain name of the Moodle site (e.g. moodle.example.edu).'
     Type: String
-  MoodleLocale:
-    Description: "The main language of the Moodle site, during initial configuration."
-    Type: String
-    Default: en
   AvailabilityZones:
     Description: 'List of Availability Zones to use for the subnets in the VPC. Note:
       The logical order is preserved.'
@@ -476,7 +489,21 @@ Resources:
         GenerateStringKey: 'password'
         PasswordLength: 16
         ExcludeCharacters: '"@/\'
-
+  MoodleConfigSecret:
+    Type: AWS::SecretsManager::Secret
+    Properties:
+      Description: 'Configuration secrets for Moodle'
+      GenerateSecretString:
+        SecretStringTemplate: '{"registrar_dbuser": "", "registrar_dbpass": "",
+            "jira_user": "", "jira_password": "", "jira_pid": "",
+            "block_iclicker_sso_shared_key": "", "kaltura_partner_id": "",
+            "kaltura_adminsecret": "", "mylabmastering_key": "",
+            "mylabmastering_secret": "", "zoom_apikey": "", "zoom_apisecret": "",
+            "filter_poodll_registrationkey": "", "bruincast_user": "", "bruincast_pass": "",
+            "turnitin_accountid": "", "turnitin_secretkey": ""}'
+        GenerateStringKey: 'passwordsaltmain'
+        PasswordLength: 32
+        ExcludeCharacters: '"@/\'
   securitygroups:
     #DependsOn: !Ref VpcId
     Type: AWS::CloudFormation::Stack
@@ -613,8 +640,16 @@ Resources:
         #   !Ref DatabaseMasterUsername
         MyRDSInstanceSecretArn:
           !Ref MyRDSInstanceSecret
+        MoodleConfigSecretArn:
+          !Ref MoodleConfigSecret
         DatabaseName:
           !Ref DatabaseName
+        DeploymentKey:
+          !Ref DeploymentKey
+        DeploymentBranchCommitTag:
+          !Ref DeploymentBranchCommitTag
+        Environment:
+          !Ref Environment
         ElasticFileSystem:
           !GetAtt [ efsfilesystem, Outputs.ElasticFileSystem ]
         EC2KeyName:
@@ -639,8 +674,6 @@ Resources:
           !Join [',', !Ref PrivateSubnets]
         DomainName:
           !Ref DomainName
-        MoodleLocale:
-          !Ref MoodleLocale
         ElastiCacheClusterEndpointAddress:
           ''
       TemplateURL: https://cat-ccle-aws-refarch-moodle-test.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/04-web.yaml
@@ -656,8 +689,16 @@ Resources:
         #   !Ref DatabaseMasterUsername
         MyRDSInstanceSecretArn:
           !Ref MyRDSInstanceSecret
+        MoodleConfigSecretArn:
+          !Ref MoodleConfigSecret
         DatabaseName:
           !Ref DatabaseName
+        DeploymentKey:
+          !Ref DeploymentKey
+        DeploymentBranchCommitTag:
+          !Ref DeploymentBranchCommitTag
+        Environment:
+          !Ref Environment
         ElasticFileSystem:
           !GetAtt [ efsfilesystem, Outputs.ElasticFileSystem ]
         EC2KeyName:
@@ -682,8 +723,6 @@ Resources:
           !Join [',', !Ref PrivateSubnets]
         DomainName:
           !Ref DomainName
-        MoodleLocale:
-          !Ref MoodleLocale
         ElastiCacheClusterEndpointAddress:
           !GetAtt sessioncache.Outputs.ElastiCacheClusterEndpointAddress
       TemplateURL: https://cat-ccle-aws-refarch-moodle-test.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/04-web.yaml
