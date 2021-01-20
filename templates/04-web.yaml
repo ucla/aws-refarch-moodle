@@ -24,7 +24,6 @@ Metadata:
         default: Moodle Parameters
       Parameters:
         - DomainName
-        - MoodleLocale
     - Label:
         default: Database Parameters
       Parameters:
@@ -73,8 +72,6 @@ Metadata:
         default: Web Security Group
       DomainName:
         default: Site Domain
-      MoodleLocale:
-        default: Language Code
 
 Parameters:
 
@@ -101,11 +98,24 @@ Parameters:
   #   Type: String
   MyRDSInstanceSecretArn:
     Type: String
+  MoodleConfigSecretArn:
+    Type: String
   DatabaseName:
     AllowedPattern: ^([a-zA-Z0-9]*)$
     Description: The Amazon RDS master database name.
     Type: String
     Default: moodle
+  DeploymentKey:
+    AllowedPattern: ^$|(arn:aws:secretsmanager:)([a-zA-Z0-9:-])*$
+    Description: '[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the domain name you use below.'
+    Type: String
+  DeploymentBranchCommitTag:
+    Description: The branch or commit id or tag to run on the EC2 instances
+    Type: String
+  Environment:
+    AllowedPattern: ^(dev|test|prod|stage)$
+    Description: Specify config file to use - dev, test, stage, prod
+    Type: String
   ElasticFileSystem:
     AllowedPattern: ^(fs-)([a-z0-9]{8}|[a-z0-9]{17})$
     Description: The Amazon EFS file system id.
@@ -222,10 +232,6 @@ Parameters:
     AllowedPattern: ^$|(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$
     Description: '[ Optional ] The main domain name of the Moodle site (e.g. moodle.example.edu). Leave empty to use the ALB DNS name for the Moodle site.'
     Type: String
-  MoodleLocale:
-    Description: The main language used in the Moodle configuration wizard.
-    Type: String
-    Default: en
   LatestAmiId :
     Type : AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
     Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
@@ -330,6 +336,8 @@ Resources:
             - secretsmanager:GetSecretValue
             Resource:
             - !Ref MyRDSInstanceSecretArn
+            - !Ref MoodleConfigSecretArn
+            - !Ref DeploymentKey
   Logs:
       Type: AWS::Logs::LogGroup
       DeletionPolicy: Retain
@@ -433,6 +441,7 @@ Resources:
         configSets:
           deploy_webserver:
             - install_logs
+            - install_deploymentkey
             - install_webserver
             - install_moodle
             - install_cacheclient
@@ -527,6 +536,12 @@ Resources:
                 log_stream_name = {instance_id}/httpd
                 datetime_format = %d/%b/%Y:%H:%M:%S
 
+                [/var/log/php-fpm]
+                file = /var/log/php-fpm/*
+                log_group_name = ${Logs}
+                log_stream_name = {instance_id}/php-fpm
+                datetime_format =
+
               mode: '000444'
               owner: root
               group: root
@@ -555,9 +570,29 @@ Resources:
               command: ./download_aws_ini.sh
               cwd: /tmp
               ignoreErrors: true
+        install_deploymentkey:
+          files:
+            /tmp/install_deploymentkey.sh:
+                content: !Sub |
+                  #!/bin/bash
+                  yum install -y jq
+                  echo "Installing deployment key..."
+                  aws configure set region ${AWS::Region}
+                  aws secretsmanager get-secret-value --secret-id ${DeploymentKey} | jq -r '.SecretString' > ~/.ssh/id_ed25519
+                  chmod 400 ~/.ssh/id_ed25519
+                  echo "Adding Github to knownhost list..."
+                  ssh-keyscan -H  github.com >>  ~/.ssh/known_hosts
+                mode: 000500
+                owner: root
+                group: root
+          commands:
+            install_deploymentkey:
+              command: ./install_deploymentkey.sh
+              cwd: /tmp
+              ignoreErrors: false
         install_moodle:
           files:
-            /tmp/config.php:
+            /tmp/config_private.php:
               content: !Sub |
                   <?php
                   require 'lib/aws.phar';
@@ -593,7 +628,7 @@ Resources:
                   $CFG->dbuser = json_decode($secret)->{'username'};
                   $CFG->dbpass = json_decode($secret)->{'password'};
                   $CFG->prefix = 'mdl_';
-                  $CFG->lang = '${MoodleLocale}';
+
                   $CFG->dboptions = array(
                     'dbpersist' => false,
                     'dbsocket' => false,
@@ -629,24 +664,105 @@ Resources:
                     $CFG->session_memcached_lock_expire = 7100;
                     $CFG->session_memcached_lock_retry_sleep = 150;
                   }
-                  @error_reporting(E_ALL | E_STRICT);   // NOT FOR PRODUCTION SERVERS!
-                  @ini_set('display_errors', '1');         // NOT FOR PRODUCTION SERVERS!
-                  $CFG->debug = (E_ALL | E_STRICT);   // === DEBUG_DEVELOPER - NOT FOR PRODUCTION SERVERS!
-                  $CFG->debugdisplay = 1;
-                  require_once(__DIR__ . '/lib/setup.php');
-                  // END OF CONFIG //
-                  ?>
-              mode: '000755'
+
+                  $CFG->debugusers = '19,16,3,229878';
+                  $CFG->directorypermissions = 02775;
+                  $CFG->disableautologin = true;
+                  $CFG->forced_plugin_settings['tool_uclacoursecreator']['email_template_dir'] = '/var/www/moodle/ccle_email_templates/course_creator';
+
+                  // Set additional secrets
+                  try {
+                      $result = $client->getSecretValue([
+                          'SecretId' => '${MoodleConfigSecretArn}',
+                      ]);
+                      $secrets = json_decode($result['SecretString']);
+                      $CFG->passwordsaltmain = $secrets->passwordsaltmain;
+                      $CFG->registrar_dbtype = 'odbc_mssql';
+                      $CFG->registrar_dbhost = 'REGISTRAR';
+                      $CFG->registrar_dbuser = $secrets->registrar_dbuser;
+                      $CFG->registrar_dbpass = $secrets->registrar_dbpass;
+                      $CFG->forced_plugin_settings['block_ucla_help']['jira_user'] = $secrets->jira_user;
+                      $CFG->forced_plugin_settings['block_ucla_help']['jira_password'] = $secrets->jira_password;
+                      $CFG->forced_plugin_settings['block_ucla_help']['jira_pid'] = $secrets->jira_pid;
+                      $CFG->forced_plugin_settings['block_iclicker']['block_iclicker_sso_shared_key'] = $secrets->block_iclicker_sso_shared_key;
+                      $CFG->forced_plugin_settings['local_kaltura']['partner_id'] = $secrets->kaltura_partner_id;
+                      $CFG->forced_plugin_settings['local_kaltura']['adminsecret'] = $secrets->kaltura_adminsecret;
+                      $CFG->mylabmastering_key = $secrets->mylabmastering_key;
+                      $CFG->mylabmastering_secret = $secrets->mylabmastering_secret;
+                      $CFG->forced_plugin_settings['mod_zoom']['apikey'] = $secrets->zoom_apikey;
+                      $CFG->forced_plugin_settings['mod_zoom']['apisecret'] = $secrets->zoom_apisecret;
+                      $CFG->forced_plugin_settings['turnitintooltwo']['accountid'] = $secrets->turnitin_accountid;
+                      $CFG->forced_plugin_settings['turnitintooltwo']['secretkey'] = $secrets->turnitin_secretkey;
+                      $CFG->filter_poodll_registrationkey = $secrets->filter_poodll_registrationkey;
+                      $CFG->forced_plugin_settings['block_ucla_media']['bruincast_user'] = $secrets->bruincast_user;
+                      $CFG->forced_plugin_settings['block_ucla_media']['bruincast_pass'] = $secrets->bruincast_pass;
+                  } catch (AwsException $e) {
+                      $error = $e->getAwsErrorCode();
+                  }
+
+              mode: '000644'
               owner: root
               group: root
 
             /tmp/install_moodle.sh:
               content:  !Sub |
                 #!/bin/bash -xe
-                wget -O /tmp/moodle.tgz https://download.moodle.org/download.php/direct/stable310/moodle-3.10.tgz
-                tar -xvzf /tmp/moodle.tgz --strip-components=1 -C /var/www/moodle/html/
-                wget -O /var/www/moodle/html/lib/aws.phar https://docs.aws.amazon.com/aws-sdk-php/v3/download/aws.phar
-                cp /tmp/config.php /var/www/moodle/html/config.php
+
+                yum install -y git
+
+                if ! [ -d /var/www/moodle/html/.git ]; then
+                  echo "Checkout code from Github..."
+                  git clone --depth 1 git@github.com:ucla/moodle.git /var/www/moodle/html
+                fi
+
+                cd /var/www/moodle/html || exit 1
+
+                echo "Checking out ${DeploymentBranchCommitTag}..."
+                git checkout ${DeploymentBranchCommitTag}
+
+                if ! [ -f "/var/www/moodle/html/lib/aws.phar" ]; then
+                    echo "Downloading aws.phar..."
+                    wget -O /var/www/moodle/html/lib/aws.phar https://docs.aws.amazon.com/aws-sdk-php/v3/download/aws.phar
+                fi
+
+                echo "Updating moodle submodules..."
+                git submodule update --init --recursive --jobs 8 --quiet
+
+                echo "Installing composer..."
+                export COMPOSER_HOME="$HOME/.config/composer"
+                curl -sS http://getcomposer.org/installer | php
+
+                echo "Doing composer install..."
+                php composer.phar install
+
+                if [ -L "config.php" ]; then
+                    echo "Config symlink exists, no need to make a new one"
+                else
+                    echo "Using ${Environment} config file..."
+                    ln -s local/ucla/config/shared_${Environment}_moodle-config.php config.php
+                fi
+
+                if ! [ -f "config_private.php" ]; then
+                    if ! [ -f "/tmp/config_private.php" ]; then
+                        echo "File /tmp/config_private.php not found, try refreshing the instances"
+                        exit 1
+                    else
+                        echo "Copying config_private.php..."
+                        cp -p /tmp/config_private.php ./config_private.php
+                    fi
+                else
+                    echo "Config private exists, no need to make a new one"
+                fi
+
+                if ! [ -d /var/www/moodle/ccle_email_templates ]; then
+                    echo "Copying course creator email templates..."
+                    git clone https://github.com/ucla/ccle_email_templates.git /var/www/moodle/ccle_email_templates
+                else
+                    echo "Updating course creator email templates..."
+                    cd /var/www/moodle/ccle_email_templates || exit 1
+                    git pull
+                fi
+
                 chown -R root:apache /var/www/moodle/html
                 chown -R apache:apache /var/www/moodle/local
 
@@ -680,8 +796,9 @@ Resources:
                   fi
                   echo 'extension=/usr/lib64/php/modules/amazon-elasticache-cluster-client.so;' >> /etc/php.d/50-memcached.ini
 
-                  #update Moodle source to use DYNAMIC_CLIENT_MODE so Moodle can detect changes to the elasticache cluster membership
-                  sed -i '/\$this->options\[Memcached::OPT_BUFFER_WRITES\] = \$bufferwrites;/a \ \ \ \ \ \ \ \ $this->options[Memcached::OPT_CLIENT_MODE] = Memcached::DYNAMIC_CLIENT_MODE;' /var/www/moodle/html/cache/stores/memcached/lib.php
+                  # Commenting out since this will be done in the code instead.
+                  ##update Moodle source to use DYNAMIC_CLIENT_MODE so Moodle can detect changes to the elasticache cluster membership
+                  ##sed -i '/\$this->options\[Memcached::OPT_BUFFER_WRITES\] = \$bufferwrites;/a \ \ \ \ \ \ \ \ $this->options[Memcached::OPT_CLIENT_MODE] = Memcached::DYNAMIC_CLIENT_MODE;' /var/www/moodle/html/cache/stores/memcached/lib.php
 
               mode: 000500
               owner: root
