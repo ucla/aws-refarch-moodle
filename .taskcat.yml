@@ -51,6 +51,7 @@ tests:  # Test definition section
       EfsGrowthInstanceType: t3.micro
       PrivateSubnets: 'subnet-01d8a7092b87ff57b,subnet-0d39c760e52360242'
       PublicSubnets: 'subnet-02fb2e17a34aa3552,subnet-07cf697d8edc81669'
+      TemplateSource: '-test'
       UseApplicationCacheBoolean: 'false'
       UseSessionCacheBoolean: 'false'
       VpcId: 'vpc-08c23a8a235ced46f'
