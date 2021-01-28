@@ -482,6 +482,19 @@ Resources:
                    echo '  Require all granted' >> /etc/httpd/conf.d/moodle.conf
                    echo '</Directory>' >> /etc/httpd/conf.d/moodle.conf
                 fi
+
+                # Setup Sendfile
+                amazon-linux-extras install epel -y
+                yum install -y mod_xsendfile
+                # Set Moodle directories to have Sendfile support
+                echo '<IfModule mod_xsendfile.c>' >> /etc/httpd/conf.modules.d/xsendfile.conf
+                echo '  XSendFile on' >> /etc/httpd/conf.modules.d/xsendfile.conf
+                echo '  XsendFilePath /var/www/moodle/html' >> /etc/httpd/conf.modules.d/xsendfile.conf
+                echo '  XSendFilePath /var/www/moodle/data' >> /etc/httpd/conf.modules.d/xsendfile.conf
+                echo '  XSendFilePath /var/www/moodle/cache' >> /etc/httpd/conf.modules.d/xsendfile.conf
+                echo '  XsendFilePath /var/www/moodle/temp' >> /etc/httpd/conf.modules.d/xsendfile.conf
+                echo '  XsendFilePath /var/www/moodle/local' >> /etc/httpd/conf.modules.d/xsendfile.conf
+                echo '</IfModule>' >> /etc/httpd/conf.modules.d/xsendfile.conf
               mode: 000500
               owner: root
               group: root
