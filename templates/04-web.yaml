@@ -455,7 +455,7 @@ Resources:
               content: !Sub |
                 #!/bin/bash -xe
                 amazon-linux-extras install -y php7.3
-                yum install -y awslogs httpd mysql php-gd php-soap php-intl php-mbstring php-xmlrpc php-zip
+                yum install -y awslogs httpd mysql php-gd php-soap php-intl php-mbstring php-xmlrpc php-zip php-pecl-mcrypt
                 # Change memory limit to help with large backup/restore
                 sed -i 's/memory_limit =.*/memory_limit = 8192M/' /etc/php.ini
                 sed -i 's/max_execution_time =.*/max_execution_time = 300/' /etc/php.ini
@@ -613,14 +613,14 @@ Resources:
                       ]);
 
                   } catch (AwsException $e) {
-                      $error = $e->getAwsErrorCode();
+                      throw new Exception($e->getAwsErrorCode());
                   }
                   // Decrypts secret using the associated KMS CMK.
                   // Depending on whether the secret is a string or binary, one of these fields will be populated.
                   if (isset($result['SecretString'])) {
                       $secret = $result['SecretString'];
                   }
-                  $CFG = new stdClass;
+
                   $CFG->dbtype = 'auroramysql';
                   $CFG->dblibrary = 'native';
                   $CFG->dbhost = '${DatabaseClusterEndpointAddress}';
@@ -646,13 +646,15 @@ Resources:
                   }
                   $CFG->wwwroot = strtolower($hostwithprotocol);
                   $CFG->sslproxy = (substr($hostwithprotocol,0,5)=='https' ? true : false);
+
                   // Moodledata location //
                   $CFG->dataroot = '/var/www/moodle/data';
                   $CFG->tempdir = '/var/www/moodle/temp';
                   $CFG->cachedir = '/var/www/moodle/cache';
                   $CFG->localcachedir = '/var/www/moodle/local';
-                  $CFG->directorypermissions = 02777;
+                  $CFG->directorypermissions = 02775;
                   $CFG->admin = 'admin';
+
                   // Configure Session Cache
                   $SessionEndpoint = '${ElastiCacheClusterEndpointAddress}';
                   if ($SessionEndpoint != '') {
@@ -665,9 +667,6 @@ Resources:
                     $CFG->session_memcached_lock_retry_sleep = 150;
                   }
 
-                  $CFG->debugusers = '19,16,3,229878';
-                  $CFG->directorypermissions = 02775;
-                  $CFG->disableautologin = true;
                   $CFG->forced_plugin_settings['tool_uclacoursecreator']['email_template_dir'] = '/var/www/moodle/ccle_email_templates/course_creator';
 
                   // Set additional secrets
@@ -697,7 +696,7 @@ Resources:
                       $CFG->forced_plugin_settings['block_ucla_media']['bruincast_user'] = $secrets->bruincast_user;
                       $CFG->forced_plugin_settings['block_ucla_media']['bruincast_pass'] = $secrets->bruincast_pass;
                   } catch (AwsException $e) {
-                      $error = $e->getAwsErrorCode();
+                      throw new Exception($e->getAwsErrorCode());
                   }
 
               mode: '000644'
@@ -710,15 +709,10 @@ Resources:
 
                 yum install -y git
 
-                if ! [ -d /var/www/moodle/html/.git ]; then
-                  echo "Checkout code from Github..."
-                  git clone --depth 1 git@github.com:ucla/moodle.git /var/www/moodle/html
-                fi
+                echo "Checking out ${DeploymentBranchCommitTag}..."
+                git clone git@github.com:ucla/moodle.git --branch ${DeploymentBranchCommitTag} --single-branch /var/www/moodle/html
 
                 cd /var/www/moodle/html || exit 1
-
-                echo "Checking out ${DeploymentBranchCommitTag}..."
-                git checkout ${DeploymentBranchCommitTag}
 
                 if ! [ -f "/var/www/moodle/html/lib/aws.phar" ]; then
                     echo "Downloading aws.phar..."

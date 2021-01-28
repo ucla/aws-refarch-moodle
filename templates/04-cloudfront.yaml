@@ -42,7 +42,7 @@ Conditions:
   NoSslCertificate:
     !Equals [ '', !Ref CloudFrontAcmCertificate ]
   DomainName:
-    !Not [ !Equals [ '', !Ref DomainName ] ]  
+    !Not [ !Equals [ '', !Ref DomainName ] ]
   NoDomainName:
     !Equals [ '', !Ref DomainName ]
 
@@ -83,6 +83,8 @@ Resources:
           Id: elb
           CustomOriginConfig:
             OriginProtocolPolicy: http-only
+            OriginKeepaliveTimeout: 60
+            OriginReadTimeout: 60
         PriceClass: PriceClass_100
   CloudFrontDistributionSslCertificate:
     Type: AWS::CloudFront::Distribution

@@ -455,13 +455,13 @@ Resources:
 
           def handler(event, context):
               if not os.environ.get('filesystemid'):
-                  print "Unable to get the environment variable filesystemid"
+                  print("Unable to get the environment variable filesystemid")
                   sys.exit(1)
               else:
                   filesystemid = os.environ.get('filesystemid')
 
               if not os.environ.get('region'):
-                  print "Unable to get the environment variable region"
+                  print("Unable to get the environment variable region")
                   sys.exit(1)
               else:
                   region = os.environ.get('region')
@@ -501,7 +501,7 @@ Resources:
       FunctionName: !Join [ '', [ 'efs-', !Ref ElasticFileSystem, '-size-monitor' ] ]
       Handler: index.handler
       Role: !GetAtt LambdaRole.Arn
-      Runtime: python2.7
+      Runtime: python3.8
       Timeout: 60
   LambdaRole:
     Type: AWS::IAM::Role
