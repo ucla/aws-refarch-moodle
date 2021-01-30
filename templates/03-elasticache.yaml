@@ -115,19 +115,24 @@ Conditions:
 Resources:
 
   ElastiCacheCluster:
-    Type: AWS::ElastiCache::CacheCluster
+    Type: AWS::ElastiCache::ReplicationGroup
     Properties:
-      AZMode: cross-az
+      ReplicationGroupId: !Ref ElastiCacheClusterName
+      ReplicationGroupDescription: 'Redis cache'
+      AtRestEncryptionEnabled: true
+      TransitEncryptionEnabled: false # Must be false unless you implement AuthToken.
+      AutoMinorVersionUpgrade: true
+      AutomaticFailoverEnabled: true
+      MultiAZEnabled: true
       CacheNodeType: !Ref ElastiCacheNodeType
       CacheSubnetGroupName: !Ref ElastiCacheSubnetGroup
-      ClusterName: !Ref ElastiCacheClusterName
-      Engine: memcached
-      NumCacheNodes:
+      Engine: redis
+      NumCacheClusters:
         !Ref NumberOfSubnets
       Tags:
         - Key: Name
           Value: !Join [ '', [ 'Moodle / ', !Ref 'AWS::StackName' ] ]
-      VpcSecurityGroupIds:
+      SecurityGroupIds:
       - !Ref ElastiCacheSecurityGroup
   ElastiCacheSubnetGroup:
     Type: AWS::ElastiCache::SubnetGroup
@@ -158,4 +163,4 @@ Resources:
           ]
 Outputs:
   ElastiCacheClusterEndpointAddress:
-    Value: !GetAtt ElastiCacheCluster.ConfigurationEndpoint.Address
+    Value: !GetAtt ElastiCacheCluster.PrimaryEndPoint.Address

@@ -645,6 +645,8 @@ Resources:
           !Ref MyRDSInstanceSecret
         MoodleConfigSecretArn:
           !Ref MoodleConfigSecret
+        CachePrefix:
+          !Ref CachePrefix
         DatabaseName:
           !Ref DatabaseName
         DeploymentKey:
@@ -677,8 +679,10 @@ Resources:
           !Join [',', !Ref PrivateSubnets]
         DomainName:
           !Ref DomainName
-        ElastiCacheClusterEndpointAddress:
+        SessionElastiCacheClusterEndpointAddress:
           ''
+        ApplicationElastiCacheClusterEndpointAddress:
+          !If [DeployApplicationCache, !GetAtt applicationcache.Outputs.ElastiCacheClusterEndpointAddress, '']
       TemplateURL: !Sub https://cat-ccle-aws-refarch-moodle${TemplateSource}.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/04-web.yaml
   webcached:
     DependsOn: [ publicalb, rds, efsfilesystem, sessioncache ]
@@ -694,6 +698,8 @@ Resources:
           !Ref MyRDSInstanceSecret
         MoodleConfigSecretArn:
           !Ref MoodleConfigSecret
+        CachePrefix:
+          !Ref CachePrefix
         DatabaseName:
           !Ref DatabaseName
         DeploymentKey:
@@ -726,8 +732,10 @@ Resources:
           !Join [',', !Ref PrivateSubnets]
         DomainName:
           !Ref DomainName
-        ElastiCacheClusterEndpointAddress:
+        SessionElastiCacheClusterEndpointAddress:
           !GetAtt sessioncache.Outputs.ElastiCacheClusterEndpointAddress
+        ApplicationElastiCacheClusterEndpointAddress:
+          !If [DeployApplicationCache, !GetAtt applicationcache.Outputs.ElastiCacheClusterEndpointAddress, '']
       TemplateURL: !Sub https://cat-ccle-aws-refarch-moodle${TemplateSource}.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/04-web.yaml
   cloudfront:
     Condition: DeployCloudFront
