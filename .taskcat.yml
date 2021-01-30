@@ -9,7 +9,7 @@ project:  # Project specific configuration section
     DatabaseCmk: 'arn:aws:kms:us-west-2:095974944794:key/dcd37fd9-8fbf-4342-81a8-548681df5ffa'
     DatabaseEncrpytedBoolean: 'true'
     DatabaseInstanceType: 'db.r5.large'
-    DeploymentBranchCommitTag: 'master'
+    DeploymentBranchCommitTag: 'AWS-changes'
     DeploymentKey: 'arn:aws:secretsmanager:us-west-2:095974944794:secret:AWSCCLEDeploymentKey-WI4nl3'
     DomainName: ''
     EC2KeyName: CCLE-DR
@@ -18,17 +18,14 @@ project:  # Project specific configuration section
     Environment: 'stage'
     HostedZoneName: ''
     NumberOfAZs: 2
-    # PrivateSubnets: 'subnet-06a3baa880629ed73,subnet-0a64f75573465a5d7'
     PublicAlbAcmCertificate: ''
-    # PublicSubnets: 'subnet-0768522309f73972a,subnet-0e7454b0142913b70'
     UseRoute53Boolean: false
     UseApplicationCacheBoolean: 'true'
     UseCloudFrontBoolean: 'true'
     UseRoute53Boolean: 'false'
-    UseSessionCacheBoolean: 'false'
-    # VpcId: 'vpc-0017b23ff4df82e53'
+    UseSessionCacheBoolean: 'true'
     WebAsgMax: 4
-    WebInstanceType: c5.xlarge
+    WebInstanceType: t3.small
   regions: # List of AWS regions
     - us-west-2
   # Name of S3 bucket to upload project to
