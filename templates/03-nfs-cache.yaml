@@ -1,0 +1,165 @@
+AWSTemplateFormatVersion: 2010-09-09
+Description: >-
+  CloudFormation Template for deploying a local NFS Server using Amazon Linux
+  AMI
+Parameters:
+  AZ1:
+    Description: >-
+      What availability zone should this stack be launched in? us-east-1a,
+      us-east-1b, etc.
+    Type: String
+    Default: us-west-2a
+    ConstraintDescription: must be a valid EC2 Availability Zone
+  VPC:
+    Description: Which VPC would you like to launch the NFS server into
+    Type: 'AWS::EC2::VPC::Id'
+  NFSSubnet:
+    Description: Which subnet would you like to launch the NFS server into
+    Type: 'AWS::EC2::Subnet::Id'
+  NFSInstanceType:
+    Default: i3.large
+    Description: NFS server instance type
+    Type: String
+  SubnetFrom:
+    Description: The CIDR range that has access to mount folders from the NFS server
+    Default: 10.0.0.0/16
+    Type: String
+    MinLength: '5'
+    MaxLength: '18'
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(\/(\d|[1-2]\d|3[0-2]))'
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/xx
+  SSHFrom:
+    Description: The CIDR range that has access to SSH to the NFS server
+    Default: 10.0.0.0/16
+    Type: String
+    MinLength: '5'
+    MaxLength: '18'
+    AllowedPattern: '(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})(\/(\d|[1-2]\d|3[0-2]))'
+    ConstraintDescription: must be a valid IP CIDR range of the form x.x.x.x/xx
+  PrivateKeyName:
+    Description: Key file used to SSH into servers
+    Type: 'AWS::EC2::KeyPair::KeyName'
+  LatestAmiId :
+    Type : AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+Conditions: {}
+Resources:
+  NFSSecurityGroup:
+    Type: 'AWS::EC2::SecurityGroup'
+    Properties:
+      GroupDescription: Enable internal access to the NAT device
+      VpcId: !Ref VPC
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: '111'
+          ToPort: '111'
+          CidrIp: !Ref SubnetFrom
+        - IpProtocol: udp
+          FromPort: '111'
+          ToPort: '111'
+          CidrIp: !Ref SubnetFrom
+        - IpProtocol: tcp
+          FromPort: '892'
+          ToPort: '892'
+          CidrIp: !Ref SubnetFrom
+        - IpProtocol: udp
+          FromPort: '892'
+          ToPort: '892'
+          CidrIp: !Ref SubnetFrom
+        - IpProtocol: tcp
+          FromPort: '2049'
+          ToPort: '2049'
+          CidrIp: !Ref SubnetFrom
+        - IpProtocol: udp
+          FromPort: '2049'
+          ToPort: '2049'
+          CidrIp: !Ref SubnetFrom
+        - IpProtocol: tcp
+          FromPort: '32803'
+          ToPort: '32803'
+          CidrIp: !Ref SubnetFrom
+        - IpProtocol: udp
+          FromPort: '32769'
+          ToPort: '32769'
+          CidrIp: !Ref SubnetFrom
+        - IpProtocol: tcp
+          FromPort: '22'
+          ToPort: '22'
+          CidrIp: !Ref SSHFrom
+  NFSServer:
+    Type: 'AWS::EC2::Instance'
+    Metadata:
+      'AWS::CloudFormation::Init':
+        config:
+          files:
+            /tmp/nfs:
+              content: |
+                # TCP port rpc.lockd should listen on.
+                LOCKD_TCPPORT=32803
+                # UDP port rpc.lockd should listen on.
+                LOCKD_UDPPORT=32769
+                # Port rpc.mountd should listen on.
+                MOUNTD_PORT=892
+          commands:
+            makedir:
+              command: mkdir /nfs
+          services:
+            sysvinit:
+              nfs:
+                enabled: 'true'
+                ensureRunning: 'true'
+          packages:
+            yum:
+              nfs-utils: []
+    Properties:
+      InstanceType: !Ref NFSInstanceType
+      KeyName: !Ref PrivateKeyName
+      NetworkInterfaces:
+        - GroupSet:
+            - !Ref NFSSecurityGroup
+          AssociatePublicIpAddress: 'true'
+          DeviceIndex: '0'
+          DeleteOnTermination: 'true'
+          SubnetId: !Ref NFSSubnet
+      Tags:
+        - Key: Name
+          Value: !Ref 'AWS::StackName'
+      ImageId: !Ref LatestAmiId
+      UserData:
+        "Fn::Base64":
+          !Sub |
+            #!/bin/bash -v
+            yum update -y
+            yum install aws-cfn-bootstrap -y
+
+            # download data and install file
+            /opt/aws/bin/cfn-init -s ${AWS::StackName} -r NFSServer --region ${AWS::Region} || error_exit 'Failed to run cfn-init'
+
+            echo "/nfs '${SubnetFrom} (rw,no_root_squash,no_subtree_check,async)" > /etc/exports
+            mv /tmp/nfs /etc/sysconfig/nfs
+
+            exportfs -av
+
+            /sbin/service rpcbind restart
+            /sbin/service nfs restart
+Outputs:
+  CommandToMount:
+    Description: >-
+      To mount a device to the nfs server run "yum install nfs-utils" and then
+      "mount [PrivatIP]:/nfs localfolder as root.
+    Value: !GetAtt
+      - NFSServer
+      - PrivateIp
+  NFSServerPrivateIP:
+    Description: Private IPAddress of NFS Server
+    Value: !GetAtt
+      - NFSServer
+      - PrivateIp
+  NFSServerPublicDNS:
+    Description: Public DNS of NFS Server
+    Value: !GetAtt
+      - NFSServer
+      - PublicDnsName
+  NFSSG:
+    Description: Security Group for the NFS instances
+    Value: !Ref NFSSecurityGroup
