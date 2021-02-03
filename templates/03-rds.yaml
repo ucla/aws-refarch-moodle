@@ -240,3 +240,5 @@ Outputs:
     Value: !Ref DataSubnetGroup
   DatabaseClusterEndpointAddress:
     Value: !GetAtt DatabaseCluster.Endpoint.Address
+  DatabaseClusterReadEndpointAddress:
+    Value: !GetAtt DatabaseCluster.ReadEndpoint.Address

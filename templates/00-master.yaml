@@ -639,6 +639,8 @@ Resources:
       Parameters:
         DatabaseClusterEndpointAddress:
           !GetAtt [ rds, Outputs.DatabaseClusterEndpointAddress ]
+        DatabaseClusterReadEndpointAddress:
+          !GetAtt [ rds, Outputs.DatabaseClusterReadEndpointAddress ]
         # DatabaseMasterUsername:
         #   !Ref DatabaseMasterUsername
         MyRDSInstanceSecretArn:
@@ -692,6 +694,8 @@ Resources:
       Parameters:
         DatabaseClusterEndpointAddress:
           !GetAtt [ rds, Outputs.DatabaseClusterEndpointAddress ]
+        DatabaseClusterReadEndpointAddress:
+          !GetAtt [ rds, Outputs.DatabaseClusterReadEndpointAddress ]
         # DatabaseMasterUsername:
         #   !Ref DatabaseMasterUsername
         MyRDSInstanceSecretArn:
