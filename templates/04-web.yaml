@@ -456,6 +456,7 @@ Resources:
             - install_cacheclient
             - install_opcache
             - install_odbc
+            - install_unoconv
             - start_webserver
 
         install_webserver:
@@ -872,15 +873,15 @@ Resources:
           files:
             /tmp/install_odbc.sh:
               content: |
-                  #!/bin/bash -xe
-                  amazon-linux-extras install epel -y
-                  yum install -y unixODBC unixODBC-devel freetds php-odbc
+                #!/bin/bash -xe
+                amazon-linux-extras install epel -y
+                yum install -y unixODBC unixODBC-devel freetds php-odbc
 
-                  # Add FreeTDS driver info to the odbcinst.ini file
-                  echo "" >> /etc/odbcinst.ini
-                  echo "[FreeTDS]" >> /etc/odbcinst.ini
-                  echo "Driver = /usr/lib64/libtdsodbc.so.0" >> /etc/odbcinst.ini
-                  echo "UsageCount = 1" >> /etc/odbcinst.ini
+                # Add FreeTDS driver info to the odbcinst.ini file
+                echo "" >> /etc/odbcinst.ini
+                echo "[FreeTDS]" >> /etc/odbcinst.ini
+                echo "Driver = /usr/lib64/libtdsodbc.so.0" >> /etc/odbcinst.ini
+                echo "UsageCount = 1" >> /etc/odbcinst.ini
               mode: 000500
               owner: root
               group: root
@@ -913,6 +914,46 @@ Resources:
           commands:
             install_odbc:
               command: ./install_odbc.sh
+              cwd: /tmp
+              ignoreErrors: false
+        install_unoconv:
+          files:
+            /tmp/install_unoconv.sh:
+              content: |
+                #!/bin/bash -xe
+
+                amazon-linux-extras enable libreoffice
+                yum install -y aspell ghostscript libreoffice libreoffice-pyuno
+
+                git clone https://github.com/dagwieers/unoconv.git
+                cp unoconv/unoconv /usr/bin
+
+                systemctl enable unoconv.service
+                systemctl start unoconv.service
+              mode: 000500
+              owner: root
+              group: root
+            /etc/systemd/system/unoconv.service:
+              content: |
+                [Unit]
+                Description=Unoconv listener for document conversions
+                Documentation=https://github.com/dagwieers/unoconv
+                After=network.target remote-fs.target nss-lookup.target
+
+                [Service]
+                Type=simple
+                PIDFile=/var/run/unoconv.pid
+                Environment="UNO_PATH=/opt/libreoffice6.4/program"
+                ExecStart=/usr/bin/unoconv --listener
+
+                [Install]
+                WantedBy=multi-user.target
+              mode: '000644'
+              owner: root
+              group: root
+          commands:
+            install_unoconv:
+              command: ./install_unoconv.sh
               cwd: /tmp
               ignoreErrors: false
         start_webserver:
