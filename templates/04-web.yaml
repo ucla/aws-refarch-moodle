@@ -27,11 +27,11 @@ Metadata:
     - Label:
         default: Database Parameters
       Parameters:
+        - DatabaseClusterReadEndpointAddress
         - DatabaseClusterEndpointAddress
         - DatabaseName
         # - DatabaseMasterUsername
         # - DatabaseMasterPassword
-        - DatabaseClusterEndpointAddress
         - SessionElastiCacheClusterEndpointAddress
         - ApplicationElastiCacheClusterEndpointAddress
     - Label:
@@ -39,6 +39,8 @@ Metadata:
       Parameters:
         - ElasticFileSystem
     ParameterLabels:
+      DatabaseClusterReadEndpointAddress:
+        default: DB Cluster Read Only Endpoint Address
       DatabaseClusterEndpointAddress:
         default: DB Cluster Endpoint Address
       # DatabaseMasterUsername:
@@ -83,6 +85,9 @@ Parameters:
     Type: String
   ApplicationElastiCacheClusterEndpointAddress:
     Description: The Application ElastiCacheCluster cluster endpoint address.
+    Type: String
+  DatabaseClusterReadEndpointAddress:
+    Description: The RDS cluster read only endpoint address.
     Type: String
   DatabaseClusterEndpointAddress:
     Description: The RDS cluster endpoint address.
@@ -659,6 +664,9 @@ Resources:
                     'dbport' => '',
                     'dbhandlesoptions' => false,
                     'dbcollation' => 'utf8mb4_unicode_ci',
+                    'readonly' => [
+                      'instance' => '${DatabaseClusterReadEndpointAddress}',
+                    ]
                   );
                   // Hostname definition //
                   $hostname = '${DomainName}';
