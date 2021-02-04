@@ -361,7 +361,7 @@ Resources:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       Cooldown: '60'
-      HealthCheckGracePeriod: 300
+      HealthCheckGracePeriod: 600
       HealthCheckType: ELB
       LaunchConfigurationName: !Ref WebLaunchConfiguration
       MaxSize: !Ref WebAsgMax
@@ -405,7 +405,7 @@ Resources:
       AdjustmentType: ChangeInCapacity
       AutoScalingGroupName:
         Ref: WebAutoScalingGroup
-      Cooldown: '300'
+      Cooldown: '600'
       ScalingAdjustment: 1
   CPUAlarmHigh:
     Type: AWS::CloudWatch::Alarm
