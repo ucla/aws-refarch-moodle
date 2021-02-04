@@ -487,18 +487,6 @@ Resources:
                 sed -i 's/max_input_vars =.*/max_input_vars = 10000/' /etc/php.ini
                 sed -i 's/;date.timezone =.*/date.timezone = America\/Los_Angeles/' /etc/php.ini
 
-                if [ ! -f /etc/httpd/conf.d/moodle.conf ]; then
-                   touch /etc/httpd/conf.d/moodle.conf
-                   echo 'TimeOut 300' >> /etc/httpd/conf.d/moodle.conf
-                   echo 'ServerName 127.0.0.1:80' >> /etc/httpd/conf.d/moodle.conf
-                   echo 'DocumentRoot /var/www/moodle/html' >> /etc/httpd/conf.d/moodle.conf
-                   echo '<Directory /var/www/moodle/html>' >> /etc/httpd/conf.d/moodle.conf
-                   echo '  Options Indexes FollowSymLinks' >> /etc/httpd/conf.d/moodle.conf
-                   echo '  AllowOverride All' >> /etc/httpd/conf.d/moodle.conf
-                   echo '  Require all granted' >> /etc/httpd/conf.d/moodle.conf
-                   echo '</Directory>' >> /etc/httpd/conf.d/moodle.conf
-                fi
-
                 # Setup Sendfile
                 amazon-linux-extras install epel -y
                 yum install -y mod_xsendfile
@@ -621,6 +609,66 @@ Resources:
               ignoreErrors: false
         install_moodle:
           files:
+            /etc/httpd/conf.d/moodle.conf:
+              content: |
+                TimeOut 300
+                ServerName 127.0.0.1:80'
+                DocumentRoot /var/www/moodle/html
+                <Directory /var/www/moodle/html>
+                  Options +Includes -Indexes +FollowSymLinks
+                  DirectoryIndex index.php
+                  AcceptPathInfo on
+                  AllowOverride All
+                  Require all granted
+                </Directory>
+
+                <Directory "/var/www/moodle/html/course">
+                  #####################################################################
+                  #   -- Apache hook for "friendly URLs" --
+                  #   This local override file allows for course urls that come in as
+                  #   course/view/SHOTNAME to be translated to the correct
+                  #   destination within the server.
+                  #####################################################################
+
+                  # NOTE: make sure Moodle folder is not mapped via Alias - options below
+                  # won't work with it for some reason
+                  RewriteEngine On
+
+                  <IfModule negotiation_module>
+                    # MultiViews has to be off, otherwise mod_negotiation will match
+                    # /view/ with view.php, and skip RewriteRule
+                    Options -MultiViews
+                  </IfModule>
+
+                  # Other scripts in the course/ folder linked relatively from view.php will end
+                  # up having an invalid URL view/scriptname.php. If the file ends with .php or
+                  # .html, remove view/ from the path, and do not advance to next RewriteRule
+                  RewriteRule ^view/(.+)\.(php|html)$ $1.$2 [NC,NE,QSA,PT]
+
+                  # Expand pretty view/shortname to a proper parameter
+                  #
+                  # Use this one if this file is in the /course directory
+                  RewriteRule ^view/(.+)$ view.php?name=$1 [NC,NE,QSA,PT]
+
+                  # Store the relative URL we are working with. Strange, but RewriteCond doesn't
+                  # have it!?
+                  RewriteRule ^.*$ - [NE,E=REL_PATH:$0]
+
+                  # check if it contains "/" and is NOT one of the existing course/* folders
+                  RewriteCond %{ENV:REL_PATH} /
+                  RewriteCond %{ENV:REL_PATH} !^format/ [NC]
+                  RewriteCond %{ENV:REL_PATH} !^import/ [NC]
+                  RewriteCond %{ENV:REL_PATH} !^report/ [NC]
+                  RewriteCond %{ENV:REL_PATH} !^ajax/ [NC]
+                  RewriteRule ^.+$ ../$0 [NC,NE,QSA,PT]
+
+                  #####################################################################
+                  #   -- END Apache hook for "friendly URLs" --
+                  #####################################################################
+                </Directory>
+              mode: '000644'
+              owner: root
+              group: root
             /tmp/config_private.php:
               content: !Sub |
                   <?php
