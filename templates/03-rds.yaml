@@ -160,6 +160,11 @@ Resources:
       DBSubnetGroupName: !Ref DataSubnetGroup
       Engine: aurora-mysql
       DBClusterParameterGroupName: default.aurora-mysql5.7
+      EnableCloudwatchLogsExports:
+        - audit
+        - error
+        - general
+        - slowquery
       KmsKeyId:
         !If [ UseAWS-ManagedCMK, !Ref 'AWS::NoValue', !Ref DatabaseCmk ]
       MasterUsername: !Join ['', ['{{resolve:secretsmanager:', !Ref MyRDSInstanceSecretArn, ':SecretString:username}}' ]]
@@ -197,6 +202,13 @@ Resources:
       Tags:
         - Key: Name
           Value: !Join [ '', [ 'Moodle / ', !Ref 'AWS::StackName' ] ]
+  DatabaseClusterParameterGroup:
+    Type: 'AWS::RDS::DBClusterParameterGroup'
+    Properties:
+      Description: 'CloudFormation Aurora MySQL Cluster Parameter Group'
+      Family: aurora-mysql5.7
+      Parameters:
+        wait_timeout: 600
   DataSubnetGroup:
     Type: AWS::RDS::DBSubnetGroup
     Properties:
