@@ -17,6 +17,8 @@ Metadata:
         - DatabaseCmk
         - DatabaseSecurityGroup
         - NumberOfSubnets
+        - PreferredBackupWindow
+        - PreferredMaintenanceWindow
         - Subnet
     ParameterLabels:
       DatabaseEncrpytedBoolean:
@@ -35,6 +37,10 @@ Metadata:
         default: DB Security Group
       NumberOfSubnets:
         default: Number of subnets
+      PreferredBackupWindow:
+        default: '09:00-10:59'
+      PreferredMaintenanceWindow:
+        default: 'sun:11:00-sun:13:00'
       Subnet:
         default: Subnets
 
@@ -103,6 +109,28 @@ Parameters:
     Default: 3
     Description: Number of subnets. This must match your selections in the list of subnets below.
     Type: String
+  PreferredBackupWindow:
+    Description: >-
+      The daily time range during which automated backups are created if
+      automated backups are enabled: hh24:mi-hh24:mi (24H Clock UTC).
+      Must not conflict with the preferred maintenance window.
+    Type: String
+    Default: '09:00-10:59'
+    AllowedPattern: >-
+      \d{2}:\d{2}-\d{2}:\d{2}
+    ConstraintDescription: >-
+      Must be a valid timestamp range for example 09:00-10:59
+  PreferredMaintenanceWindow:
+    Description: >-
+      The weekly time range during which system maintenance can occur. Use the
+      following format to specify a time range: ddd:hh24:mi-ddd:hh24:mi (24H
+      Clock UTC).
+    Type: String
+    Default: 'sun:11:00-sun:13:00'
+    AllowedPattern: >-
+      (mon|tue|wed|thu|fri|sat|sun):\d{2}:\d{2}-(mon|tue|wed|thu|fri|sat|sun):\d{2}:\d{2}
+    ConstraintDescription: >-
+      Must be a valid timestamp range with day of week, for example sun:11:00-sun:13:00
   Subnet:
     Description: Select existing subnets. The number selected must match the number of subnets above. Subnets selected must be in separate AZs.
     Type: List<AWS::EC2::Subnet::Id>
@@ -170,6 +198,8 @@ Resources:
       MasterUsername: !Join ['', ['{{resolve:secretsmanager:', !Ref MyRDSInstanceSecretArn, ':SecretString:username}}' ]]
       MasterUserPassword: !Join ['', ['{{resolve:secretsmanager:', !Ref MyRDSInstanceSecretArn, ':SecretString:password}}' ]]
       Port: 3306
+      PreferredBackupWindow: !Ref PreferredBackupWindow
+      PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
       StorageEncrypted: !Ref DatabaseEncrpytedBoolean
       Tags:
         - Key: Name

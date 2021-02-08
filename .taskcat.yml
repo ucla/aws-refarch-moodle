@@ -18,6 +18,8 @@ project:  # Project specific configuration section
     Environment: 'stage'
     HostedZoneName: ''
     NumberOfAZs: 2
+    PreferredBackupWindow: '09:00-10:59'
+    PreferredMaintenanceWindow: 'sun:11:00-sun:13:00'
     PublicAlbAcmCertificate: ''
     UseRoute53Boolean: false
     UseApplicationCacheBoolean: 'true'
