@@ -487,6 +487,10 @@ Resources:
                 sed -i 's/max_input_vars =.*/max_input_vars = 10000/' /etc/php.ini
                 sed -i 's/;date.timezone =.*/date.timezone = America\/Los_Angeles/' /etc/php.ini
 
+                # Switich from Prefork MPM to Event MPM
+                sed -i 's/LoadModule mpm_prefork_module/#LoadModule mpm_prefork_module/' /etc/httpd/conf.modules.d/00-mpm.conf
+                sed -i 's/#LoadModule mpm_event_module/LoadModule mpm_event_module/' /etc/httpd/conf.modules.d/00-mpm.conf
+
                 # Setup Sendfile
                 amazon-linux-extras install epel -y
                 yum install -y mod_xsendfile
