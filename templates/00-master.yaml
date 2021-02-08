@@ -16,6 +16,8 @@ Metadata:
         - HostedZoneName
         - DomainName
         - UseRoute53Boolean
+        - PreferredBackupWindow
+        - PreferredMaintenanceWindow
     - Label:
         default: Network
       Parameters:
@@ -129,6 +131,10 @@ Metadata:
         default: Public Subnets
       PrivateSubnets:
         default: Private Subnets
+      PreferredBackupWindow:
+        default: Preferred daily backup window (RDS)
+      PreferredMaintenanceWindow:
+        default: Preferred weekly maintenace window (ElasticCache, RDS)
       UseRoute53Boolean:
         default: Use Route 53
       UseCloudFrontBoolean:
@@ -469,6 +475,28 @@ Parameters:
     Description: Prefix to add when sourcing TemplateURLs. Leave blank if deploying from AWS console. If using taskcat, set to "-test".
     Default: ""
     Type: String
+  PreferredBackupWindow:
+    Description: >-
+      The daily time range during which automated backups are created if
+      automated backups are enabled: hh24:mi-hh24:mi (24H Clock UTC).
+      Must not conflict with the preferred maintenance window.
+    Type: String
+    Default: '09:00-10:59'
+    AllowedPattern: >-
+      \d{2}:\d{2}-\d{2}:\d{2}
+    ConstraintDescription: >-
+      Must be a valid timestamp range, for example 09:00-10:59
+  PreferredMaintenanceWindow:
+    Description: >-
+      The weekly time range during which system maintenance can occur. Use the
+      following format to specify a time range: ddd:hh24:mi-ddd:hh24:mi (24H
+      Clock UTC).
+    Type: String
+    Default: 'sun:11:00-sun:13:00'
+    AllowedPattern: >-
+      (mon|tue|wed|thu|fri|sat|sun):\d{2}:\d{2}-(mon|tue|wed|thu|fri|sat|sun):\d{2}:\d{2}
+    ConstraintDescription: >-
+      Must be a valid timestamp range with day of week, for example sun:11:00-sun:13:00
 
 Conditions:
   DeployWithoutSessionCache:
@@ -572,6 +600,10 @@ Resources:
           !Join [',', !Ref PrivateSubnets]
         NumberOfSubnets:
           !Ref NumberOfAZs
+        PreferredBackupWindow:
+          !Ref PreferredBackupWindow
+        PreferredMaintenanceWindow:
+          !Ref PreferredMaintenanceWindow
       TemplateURL: !Sub https://cat-ccle-aws-refarch-moodle${TemplateSource}.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/03-rds.yaml
   efsfilesystem:
     DependsOn: securitygroups
@@ -613,6 +645,10 @@ Resources:
           !GetAtt [ securitygroups, Outputs.ElastiCacheSecurityGroup ]
         NumberOfSubnets:
           !Ref NumberOfAZs
+        PreferredBackupWindow:
+          !Ref PreferredBackupWindow
+        PreferredMaintenanceWindow:
+          !Ref PreferredMaintenanceWindow
       TemplateURL: !Sub https://cat-ccle-aws-refarch-moodle${TemplateSource}.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/03-elasticache.yaml
   applicationcache:
     Condition: DeployApplicationCache
@@ -630,6 +666,10 @@ Resources:
           !GetAtt [ securitygroups, Outputs.ElastiCacheSecurityGroup ]
         NumberOfSubnets:
           !Ref NumberOfAZs
+        PreferredBackupWindow:
+          !Ref PreferredBackupWindow
+        PreferredMaintenanceWindow:
+          !Ref PreferredMaintenanceWindow
       TemplateURL: !Sub https://cat-ccle-aws-refarch-moodle${TemplateSource}.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/03-elasticache.yaml
   webnocache:
     DependsOn: [ publicalb, rds, efsfilesystem ]
