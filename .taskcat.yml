@@ -53,6 +53,7 @@ tests:  # Test definition section
       TemplateSource: '-test'
       UseApplicationCacheBoolean: 'false'
       UseSessionCacheBoolean: 'false'
+      VpcCidr: '192.168.0.0/16'
       VpcId: 'vpc-08c23a8a235ced46f'
       WebAsgMax: 1
       WebAsgMin: 1

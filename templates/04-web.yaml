@@ -20,6 +20,7 @@ Metadata:
         - PublicAlbTargetGroupArn
         - PublicAlbHostname
         - SslCertificate
+        - VpcCidr
     - Label:
         default: Moodle Parameters
       Parameters:
@@ -166,6 +167,12 @@ Parameters:
   Subnet:
     Description: Select existing subnets. The number selected must match the number of subnets above. Subnets selected must be in separate AZs.
     Type: List<AWS::EC2::Subnet::Id>
+  VpcCidr:
+    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+    Default: 10.0.0.0/16
+    Description: CIDR block for the VPC
+    Type: String
   WebAsgMax:
     AllowedPattern: ^((?!0$)[1-2]?[0-9]|30)$
     ConstraintDescription: Must be a number between 1 and 30.
@@ -779,6 +786,10 @@ Resources:
                     ];
                   }
 
+                  // IP restrict the heartbeat check endpoints
+                  $CFG->forced_plugin_settings['tool_heartbeat']['allowedips'] = '${VpcCidr}';
+
+                  // Course builder email templates.
                   $CFG->forced_plugin_settings['tool_uclacoursecreator']['email_template_dir'] = '/var/www/moodle/ccle_email_templates/course_creator';
 
                   // Set additional secrets

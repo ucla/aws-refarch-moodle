@@ -159,7 +159,7 @@ Resources:
     Type: AWS::ElasticLoadBalancingV2::TargetGroup
     Properties:
       HealthCheckIntervalSeconds: 30
-      HealthCheckPath: /README.txt
+      HealthCheckPath: /admin/tool/heartbeat/index.php
       HealthCheckTimeoutSeconds: 5
       Name: !Join [ '', [ 'PublicALB-', !Ref Vpc ] ]
       Port: 80
