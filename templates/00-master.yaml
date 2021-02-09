@@ -21,6 +21,7 @@ Metadata:
     - Label:
         default: Network
       Parameters:
+        - VpcCidr
         - VpcId
         - PublicSubnets
         - PrivateSubnets
@@ -127,6 +128,8 @@ Metadata:
         default: Hosted Zone
       DomainName:
         default: Site Domain
+      VpcCidr:
+        default: VpcCidr
       PublicSubnets:
         default: Public Subnets
       PrivateSubnets:
@@ -447,6 +450,12 @@ Parameters:
     Description: Number of Availability Zones to use in the VPC. This must match your
       selections in the list of Availability Zones parameter.
     Type: Number
+  VpcCidr:
+    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+    Default: 10.0.0.0/16
+    Description: CIDR block for the VPC. Used to IP restrict Heartbeat endpoint checks.
+    Type: String
   VpcId:
     Type: "AWS::EC2::VPC::Id"
     Description: Select an existing VPC
@@ -709,6 +718,8 @@ Resources:
           !GetAtt [ publicalb, Outputs.PublicAlbHostname ]
         SslCertificate:
           !GetAtt [ publicalb, Outputs.SslCertificate ]
+        VpcCidr:
+          !Ref VpcCidr
         WebAsgMax:
           !Ref WebAsgMax
         WebAsgMin:
@@ -764,6 +775,8 @@ Resources:
           !GetAtt [ publicalb, Outputs.PublicAlbHostname ]
         SslCertificate:
           !GetAtt [ publicalb, Outputs.SslCertificate ]
+        VpcCidr:
+          !Ref VpcCidr
         WebAsgMax:
           !Ref WebAsgMax
         WebAsgMin:
