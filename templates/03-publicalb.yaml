@@ -161,6 +161,8 @@ Resources:
       HealthCheckIntervalSeconds: 30
       HealthCheckPath: /admin/tool/heartbeat/index.php
       HealthCheckTimeoutSeconds: 5
+      Matcher:
+        HttpCode: '200,303'
       Name: !Join [ '', [ 'PublicALB-', !Ref Vpc ] ]
       Port: 80
       Protocol: HTTP
