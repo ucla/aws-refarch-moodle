@@ -25,6 +25,7 @@ project:  # Project specific configuration section
     UseRoute53Boolean: false
     UseApplicationCacheBoolean: 'true'
     UseCloudFrontBoolean: 'true'
+    UseCronBoolean: 'true'
     UseRoute53Boolean: 'false'
     UseSessionCacheBoolean: 'true'
     WebAsgMax: 4

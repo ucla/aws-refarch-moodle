@@ -1,0 +1,906 @@
+---
+AWSTemplateFormatVersion: 2010-09-09
+
+Description: Reference Architecture to host Moodle on AWS - Creates Moodle web Auto Scaling group
+
+Metadata:
+
+  AWS::CloudFormation::Interface:
+    ParameterGroups:
+    - Label:
+        default: Cron Parameters
+      Parameters:
+        - EC2KeyName
+        - CronInstanceType
+        - CronSecurityGroup
+        - NumberOfSubnets
+        - Subnet
+        - PublicAlbHostname
+        - SslCertificate
+        - VpcCidr
+    - Label:
+        default: Moodle Parameters
+      Parameters:
+        - DomainName
+    - Label:
+        default: Database Parameters
+      Parameters:
+        - DatabaseClusterReadEndpointAddress
+        - DatabaseClusterEndpointAddress
+        - DatabaseName
+        # - DatabaseMasterUsername
+        # - DatabaseMasterPassword
+        - SessionElastiCacheClusterEndpointAddress
+        - ApplicationElastiCacheClusterEndpointAddress
+    - Label:
+        default: File System Parameters
+      Parameters:
+        - ElasticFileSystem
+    ParameterLabels:
+      DatabaseClusterReadEndpointAddress:
+        default: DB Cluster Read Only Endpoint Address
+      DatabaseClusterEndpointAddress:
+        default: DB Cluster Endpoint Address
+      # DatabaseMasterUsername:
+      #   default: DB Master Username
+      # DatabaseMasterPassword:
+      #   default: DB Master Password
+      DatabaseName:
+        default: DB Name
+      SessionElastiCacheClusterEndpointAddress:
+        default: Session ElastiCache Endpoint Address
+      ApplicationElastiCacheClusterEndpointAddress:
+        default: Application ElastiCache Endpoint Address
+      ElasticFileSystem:
+        default: EFS File System
+      EC2KeyName:
+        default: Existing Key Pair
+      NumberOfSubnets:
+        default: Number of subnets
+      PublicAlbHostname:
+        default: Public ALB Hostname
+      SslCertificate:
+        default: ACM Cert attached to Public ALB
+      Subnet:
+        default: Subnets
+      CronInstanceType:
+        default: Cron Instance Type
+      CronSecurityGroup:
+        default: Cron Security Group
+      DomainName:
+        default: Site Domain
+
+Parameters:
+
+  SessionElastiCacheClusterEndpointAddress:
+    Description: The Session ElastiCacheCluster cluster endpoint address.
+    Type: String
+  ApplicationElastiCacheClusterEndpointAddress:
+    Description: The Application ElastiCacheCluster cluster endpoint address.
+    Type: String
+  DatabaseClusterReadEndpointAddress:
+    Description: The RDS cluster read only endpoint address.
+    Type: String
+  DatabaseClusterEndpointAddress:
+    Description: The RDS cluster endpoint address.
+    Type: String
+  # DatabaseMasterUsername:
+  #   AllowedPattern: ^([a-zA-Z0-9]*)$
+  #   Description: The Amazon RDS master username.
+  #   ConstraintDescription: Must contain only alphanumeric characters and be at least 8 characters.
+  #   MaxLength: 16
+  #   MinLength: 1
+  #   Type: String
+  # DatabaseMasterPassword:
+  #   AllowedPattern: ^([a-z0-9A-Z`~!#$%^&*()_+,\\-])*$
+  #   ConstraintDescription: Must be letters (upper or lower), numbers, and these special characters '_'`~!#$%^&*()_+,-
+  #   Description: The Amazon RDS master password.
+  #   MaxLength: 41
+  #   MinLength: 8
+  #   NoEcho: true
+  #   Type: String
+  MyRDSInstanceSecretArn:
+    Type: String
+  MoodleConfigSecretArn:
+    Type: String
+  CachePrefix:
+    Description: '[ Optional ] Prefix before caching instances (e.g. <CachePrefix>session and <CachePrefix>application'
+    Type: String
+  DatabaseName:
+    AllowedPattern: ^([a-zA-Z0-9]*)$
+    Description: The Amazon RDS master database name.
+    Type: String
+    Default: moodle
+  DeploymentKey:
+    AllowedPattern: ^$|(arn:aws:secretsmanager:)([a-zA-Z0-9:-])*$
+    Description: '[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the domain name you use below.'
+    Type: String
+  DeploymentBranchCommitTag:
+    Description: The branch or commit id or tag to run on the EC2 instances
+    Type: String
+  Environment:
+    AllowedPattern: ^(dev|test|prod|stage)$
+    Description: Specify config file to use - dev, test, stage, prod
+    Type: String
+  ElasticFileSystem:
+    AllowedPattern: ^(fs-)([a-z0-9]{8}|[a-z0-9]{17})$
+    Description: The Amazon EFS file system id.
+    Type: String
+  EC2KeyName:
+    AllowedPattern: ^([a-zA-Z0-9 @.`~!#$%^&*()_+,\\-])*$
+    ConstraintDescription: Must be letters (upper or lower), numbers, and special characters.
+    Description: Name of an EC2 KeyPair. Your bastion & Cron instances will launch with this KeyPair.
+    Type: AWS::EC2::KeyPair::KeyName
+  NumberOfSubnets:
+    AllowedValues:
+    - 2
+    - 3
+    - 4
+    - 5
+    - 6
+    Default: 2
+    Description: Number of subnets. This must match your selections in the list of subnets below.
+    Type: String
+  PublicAlbHostname:
+    Description: The hostname of the public ALB http form (e.g. http://abdc-12345-xyz.<region>.elb.amazonaws.com)
+    Type: String
+  SslCertificate:
+    AllowedValues:
+      - True
+      - False
+    Default: True
+    Description: Is there an ACM SSL Certificate attached to the Public ALB?
+    Type:
+      String
+  Subnet:
+    Description: Select existing subnets. The number selected must match the number of subnets above. Subnets selected must be in separate AZs.
+    Type: List<AWS::EC2::Subnet::Id>
+  VpcCidr:
+    AllowedPattern: "^(([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])\\.){3}([0-9]|[1-9][0-9]|1[0-9]{2}|2[0-4][0-9]|25[0-5])(\\/(1[6-9]|2[0-8]))$"
+    ConstraintDescription: CIDR block parameter must be in the form x.x.x.x/16-28
+    Default: 10.0.0.0/16
+    Description: CIDR block for the VPC
+    Type: String
+  CronInstanceType:
+    AllowedValues:
+    - t3.nano
+    - t3.micro
+    - t3.small
+    - t3.medium
+    - t3.large
+    - t3.xlarge
+    - t3.2xlarge
+    - m5.large
+    - m5.xlarge
+    - m5.2xlarge
+    - m5.4xlarge
+    - m5.12xlarge
+    - m5.24xlarge
+    - c5.large
+    - c5.xlarge
+    - c5.2xlarge
+    - c5.4xlarge
+    - c5.9xlarge
+    - c5.18xlarge
+    - r5.large
+    - r5.xlarge
+    - r5.2xlarge
+    - r5.4xlarge
+    - r5.8xlarge
+    - r5.16xlarge
+    - x1.16xlarge
+    - x1.32xlarge
+    - x1e.xlarge
+    - x1e.2xlarge
+    - x1e.4xlarge
+    - x1e.8xlarge
+    - x1e.16xlarge
+    - x1e.32xlarge
+    - d2.xlarge
+    - d2.2xlarge
+    - d2.4xlarge
+    - d2.8xlarge
+    - h1.2xlarge
+    - h1.4xlarge
+    - h1.8xlarge
+    - h1.16xlarge
+    - i3.large
+    - i3.xlarge
+    - i3.2xlarge
+    - i3.4xlarge
+    - i3.8xlarge
+    - i3.16xlarge
+    - f1.2xlarge
+    - f1.16xlarge
+    - g3.4xlarge
+    - g3.8xlarge
+    - g3.16xlarge
+    - p3.2xlarge
+    - p3.8xlarge
+    - p3.16xlarge
+    ConstraintDescription: Must be a valid Amazon EC2 instance type.
+    Default: t3.large
+    Description: The Amazon EC2 instance type for your web instances.
+    Type: String
+  CronSecurityGroup:
+    Description: Select the web security group.
+    Type: AWS::EC2::SecurityGroup::Id
+  DomainName:
+    AllowedPattern: ^$|(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$
+    Description: '[ Optional ] The main domain name of the Moodle site (e.g. moodle.example.edu). Leave empty to use the ALB DNS name for the Moodle site.'
+    Type: String
+  LatestAmiId :
+    Type : AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
+
+
+Conditions:
+
+  NoSslCertificate:
+    !Equals [ False, !Ref SslCertificate ]
+  NumberOfSubnets1:
+    !Equals [ 1, !Ref NumberOfSubnets ]
+  NumberOfSubnets2:
+    !Equals [ 2, !Ref NumberOfSubnets ]
+  NumberOfSubnets3:
+    !Equals [ 3, !Ref NumberOfSubnets ]
+  NumberOfSubnets4:
+    !Equals [ 4, !Ref NumberOfSubnets ]
+  NumberOfSubnets5:
+    !Equals [ 5, !Ref NumberOfSubnets ]
+  NumberOfSubnets6:
+    !Equals [ 6, !Ref NumberOfSubnets ]
+  Subnet0: !Or
+    - !Condition NumberOfSubnets1
+    - !Condition NumberOfSubnets2
+    - !Condition NumberOfSubnets3
+    - !Condition NumberOfSubnets4
+    - !Condition NumberOfSubnets5
+    - !Condition NumberOfSubnets6
+  Subnet1: !Or
+    - !Condition NumberOfSubnets2
+    - !Condition NumberOfSubnets3
+    - !Condition NumberOfSubnets4
+    - !Condition NumberOfSubnets5
+    - !Condition NumberOfSubnets6
+  Subnet2: !Or
+    - !Condition NumberOfSubnets3
+    - !Condition NumberOfSubnets4
+    - !Condition NumberOfSubnets5
+    - !Condition NumberOfSubnets6
+  Subnet3: !Or
+    - !Condition NumberOfSubnets4
+    - !Condition NumberOfSubnets5
+    - !Condition NumberOfSubnets6
+  Subnet4: !Or
+    - !Condition NumberOfSubnets5
+    - !Condition NumberOfSubnets6
+  Subnet5: !Condition NumberOfSubnets6
+  NoDomainName:
+    !Equals [ '', !Ref DomainName ]
+
+
+Resources:
+  CronInstanceProfile:
+    Type: AWS::IAM::InstanceProfile
+    Properties:
+      Path: /
+      Roles:
+      - !Ref CronInstanceRole
+  CronInstanceRole:
+    Type: AWS::IAM::Role
+    Properties:
+      AssumeRolePolicyDocument:
+        Version: 2012-10-17
+        Statement:
+        - Effect: Allow
+          Principal:
+            Service:
+            - ec2.amazonaws.com
+          Action:
+          - sts:AssumeRole
+      Path: /
+      Policies:
+      - PolicyName: logs
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+            - logs:CreateLogGroup
+            - logs:CreateLogStream
+            - logs:PutLogEvents
+            - logs:DescribeLogStreams
+            Resource:
+            - arn:aws:logs:*:*:*
+      - PolicyName: CompleteLifecycleAction
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+            - autoscaling:CompleteLifecycleAction
+            - autoscaling:DescribeAutoScalingInstances
+            - autoscaling:DescribeLifecycleHooks
+            Resource:
+            - arn:aws:autoscaling:*:*:*
+      - PolicyName: SecretManager
+        PolicyDocument:
+          Version: 2012-10-17
+          Statement:
+          - Effect: Allow
+            Action:
+            - secretsmanager:GetSecretValue
+            Resource:
+            - !Ref MyRDSInstanceSecretArn
+            - !Ref MoodleConfigSecretArn
+            - !Ref DeploymentKey
+  Logs:
+      Type: AWS::Logs::LogGroup
+      DeletionPolicy: Retain
+      Properties:
+        RetentionInDays: 7
+
+
+  CronLaunchConfiguration:
+    Type: AWS::AutoScaling::LaunchConfiguration
+    Metadata:
+      AWS::CloudFormation::Init:
+        configSets:
+          deploy_cronserver:
+            - install_logs
+            - install_deploymentkey
+            - install_php
+            - install_moodle
+            - install_cacheclient
+            - install_opcache
+            - install_odbc
+            - install_unoconv
+            - start_cron
+
+        install_php:
+          files:
+            /tmp/create_site_conf.sh:
+              content: !Sub |
+                #!/bin/bash -xe
+                amazon-linux-extras install -y php7.3
+                yum install -y awslogs mysql php-gd php-soap php-intl php-mbstring php-xmlrpc php-zip php-pecl-mcrypt
+                # Change memory limit to help with large backup/restore
+                sed -i 's/memory_limit =.*/memory_limit = 8192M/' /etc/php.ini
+                sed -i 's/max_execution_time =.*/max_execution_time = 300/' /etc/php.ini
+                sed -i 's/max_input_time =.*/max_input_time = 300/' /etc/php.ini
+                sed -i 's/default_socket_timeout =.*/default_socket_timeout = 300/' /etc/php.ini
+                sed -i 's/upload_max_filesize =.*/upload_max_filesize = 2G/' /etc/php.ini
+                sed -i 's/post_max_size =.*/post_max_size = 2G/' /etc/php.ini
+                # Change output buffering from 4096 to 32768 because seeing error in apache log with zend_mm_heap corrupted
+                sed -i 's/output_buffering =.*/output_buffering = 32768/' /etc/php.ini
+                sed -i 's/realpath_cache_size =.*/realpath_cache_size = 4096k/' /etc/php.ini
+                sed -i 's/realpath_cache_ttl =.*/realpath_cache_size = 256/' /etc/php.ini
+                sed -i 's/expose_php =.*/expose_php = Off/' /etc/php.ini
+                # Needed for Gradebook since it can have so many fields
+                sed -i 's/max_input_vars =.*/max_input_vars = 10000/' /etc/php.ini
+                sed -i 's/;date.timezone =.*/date.timezone = America\/Los_Angeles/' /etc/php.ini
+
+              mode: 000500
+              owner: root
+              group: root
+          commands:
+            create_site_conf:
+              command: ./create_site_conf.sh
+              cwd: /tmp
+              ignoreErrors: false
+        install_logs:
+          packages:
+            yum:
+              awslogs: []
+          files:
+            /etc/awslogs/awslogs.conf:
+              content: !Sub |
+                [general]
+                state_file= /var/awslogs/state/agent-state
+
+                [/var/log/cloud-init.log]
+                file = /var/log/cloud-init.log
+                log_group_name = ${Logs}
+                log_stream_name = {instance_id}/cloud-init.log
+                datetime_format =
+
+                [/var/log/cloud-init-output.log]
+                file = /var/log/cloud-init-output.log
+                log_group_name = ${Logs}
+                log_stream_name = {instance_id}/cloud-init-output.log
+                datetime_format =
+
+                [/var/log/cfn-init.log]
+                file = /var/log/cfn-init.log
+                log_group_name = ${Logs}
+                log_stream_name = {instance_id}/cfn-init.log
+                datetime_format =
+
+                [/var/log/cfn-hup.log]
+                file = /var/log/cfn-hup.log
+                log_group_name = ${Logs}
+                log_stream_name = {instance_id}/cfn-hup.log
+                datetime_format =
+
+                [/var/log/cfn-wire.log]
+                file = /var/log/cfn-wire.log
+                log_group_name = ${Logs}
+                log_stream_name = {instance_id}/cfn-wire.log
+                datetime_format =
+
+                [/var/log/php-fpm]
+                file = /var/log/php-fpm/*
+                log_group_name = ${Logs}
+                log_stream_name = {instance_id}/php-fpm
+                datetime_format =
+
+                [/home/moodle/logs/moodlecron]
+                file = /home/moodle/logs/moodlecron/moodlecron.out
+                log_group_name = ${Logs}
+                log_stream_name = {instance_id}/moodlecron
+                datetime_format =
+
+              mode: '000444'
+              owner: root
+              group: root
+            /etc/awslogs/awscli.conf:
+              content: !Sub |
+                [plugins]
+                cwlogs = cwlogs
+                [default]
+                region = ${AWS::Region}
+              mode: '000444'
+              owner: root
+              group: root
+          commands:
+            01_create_state_directory:
+              command: mkdir -p /var/awslogs/state
+          services:
+            sysvinit:
+              awslogsd:
+                enabled: 'true'
+                ensureRunning: 'true'
+                files: /etc/awslogs/awslogs.conf
+
+        install_aws_ini:
+          commands:
+            install_aws_ini:
+              command: ./download_aws_ini.sh
+              cwd: /tmp
+              ignoreErrors: true
+        install_deploymentkey:
+          files:
+            /tmp/install_deploymentkey.sh:
+                content: !Sub |
+                  #!/bin/bash
+                  yum install -y jq
+                  echo "Installing deployment key..."
+                  aws configure set region ${AWS::Region}
+                  aws secretsmanager get-secret-value --secret-id ${DeploymentKey} | jq -r '.SecretString' > ~/.ssh/id_ed25519
+                  chmod 400 ~/.ssh/id_ed25519
+                  echo "Adding Github to knownhost list..."
+                  ssh-keyscan -H  github.com >>  ~/.ssh/known_hosts
+                mode: 000500
+                owner: root
+                group: root
+          commands:
+            install_deploymentkey:
+              command: ./install_deploymentkey.sh
+              cwd: /tmp
+              ignoreErrors: false
+        install_moodle:
+          files:
+            /tmp/config_private.php:
+              content: !Sub |
+                  <?php
+                  require 'lib/aws.phar';
+                  use Aws\SecretsManager\SecretsManagerClient;
+                  use Aws\Exception\AwsException;
+                  use Aws\Iam\IamClient;
+
+                  $client = new SecretsManagerClient([
+                      'version' => '2017-10-17',
+                      'region' => '${AWS::Region}',
+                  ]);
+
+                  $secretName = '${MyRDSInstanceSecretArn}';
+
+                  try {
+                      $result = $client->getSecretValue([
+                          'SecretId' => $secretName,
+                      ]);
+
+                  } catch (AwsException $e) {
+                      throw new Exception($e->getAwsErrorCode());
+                  }
+                  // Decrypts secret using the associated KMS CMK.
+                  // Depending on whether the secret is a string or binary, one of these fields will be populated.
+                  if (isset($result['SecretString'])) {
+                      $secret = $result['SecretString'];
+                  }
+
+                  $CFG->dbtype = 'auroramysql';
+                  $CFG->dblibrary = 'native';
+                  $CFG->dbhost = '${DatabaseClusterEndpointAddress}';
+                  $CFG->dbname = '${DatabaseName}';
+                  $CFG->dbuser = json_decode($secret)->{'username'};
+                  $CFG->dbpass = json_decode($secret)->{'password'};
+                  $CFG->prefix = 'mdl_';
+
+                  $CFG->dboptions = array(
+                    'dbpersist' => false,
+                    'dbsocket' => false,
+                    'dbport' => '',
+                    'dbhandlesoptions' => false,
+                    'dbcollation' => 'utf8mb4_unicode_ci',
+                    'readonly' => [
+                      'instance' => '${DatabaseClusterReadEndpointAddress}',
+                    ]
+                  );
+                  // Hostname definition //
+                  $hostname = '${DomainName}';
+                  if ($hostname == '') {
+                    $hostwithprotocol = '${PublicAlbHostname}';
+                  }
+                  else {
+                    $hostwithprotocol = 'https://' . strtolower($hostname);
+                  }
+                  $CFG->wwwroot = strtolower($hostwithprotocol);
+                  $CFG->sslproxy = (substr($hostwithprotocol,0,5)=='https' ? true : false);
+
+                  // Moodledata location //
+                  $CFG->dataroot = '/var/www/moodle/data';
+                  $CFG->tempdir = '/var/www/moodle/temp';
+                  $CFG->cachedir = '/var/www/moodle/cache';
+                  $CFG->localcachedir = '/var/www/moodle/local';
+                  $CFG->directorypermissions = 02775;
+                  $CFG->admin = 'admin';
+
+                  // Configure Session Cache
+                  $SessionEndpoint = '${SessionElastiCacheClusterEndpointAddress}';
+                  if ($SessionEndpoint != '') {
+                    $CFG->dbsessions = false;
+                    $CFG->session_handler_class = '\core\session\redis';
+                    $CFG->session_redis_host = $SessionEndpoint;
+                    $CFG->session_redis_prefix = '${CachePrefix}.sess.key.';
+                    $CFG->session_redis_acquire_lock_timeout = 120;
+                    $CFG->session_redis_lock_expire = 7200;
+                    $CFG->session_redis_lock_retry = 100;
+                    $CFG->session_redis_serializer_use_igbinary = true;
+                  }
+
+                  // Configure Application Cache
+                  $ApplicationEndpoint = '${ApplicationElastiCacheClusterEndpointAddress}';
+                  if ($ApplicationEndpoint != '') {
+                    $CFG->alternative_cache_factory_class = 'tool_forcedcache_cache_factory';
+                    $CFG->tool_forcedcache_config_array = [
+                      'stores' => [
+                        '${CachePrefix}redis' => [
+                          'type' => 'redis',
+                          'config' => [
+                            'server' => $ApplicationEndpoint,
+                            'prefix' => '${CachePrefix}.app.key.',
+                            'serializer' => 2,  // Use igbinary serializer.
+                          ]
+                        ],
+                      ],
+                      'rules' => [
+                        'application' => [
+                          [
+                            'stores' => ['${CachePrefix}redis']
+                          ]
+                        ],
+                        'session' => [],
+                        'request' => []
+                      ]
+                    ];
+                  }
+
+                  // IP restrict the heartbeat check endpoints
+                  $CFG->forced_plugin_settings['tool_heartbeat']['allowedips'] = '${VpcCidr}';
+
+                  // Course builder email templates.
+                  $CFG->forced_plugin_settings['tool_uclacoursecreator']['email_template_dir'] = '/var/www/moodle/ccle_email_templates/course_creator';
+
+                  // Set additional secrets
+                  try {
+                      $result = $client->getSecretValue([
+                          'SecretId' => '${MoodleConfigSecretArn}',
+                      ]);
+                      $secrets = json_decode($result['SecretString']);
+                      $CFG->passwordsaltmain = $secrets->passwordsaltmain;
+                      $CFG->registrar_dbtype = 'odbc_mssql';
+                      $CFG->registrar_dbhost = 'REGISTRAR';
+                      $CFG->registrar_dbuser = $secrets->registrar_dbuser;
+                      $CFG->registrar_dbpass = $secrets->registrar_dbpass;
+                      $CFG->forced_plugin_settings['block_ucla_help']['jira_user'] = $secrets->jira_user;
+                      $CFG->forced_plugin_settings['block_ucla_help']['jira_password'] = $secrets->jira_password;
+                      $CFG->forced_plugin_settings['block_ucla_help']['jira_pid'] = $secrets->jira_pid;
+                      $CFG->forced_plugin_settings['block_iclicker']['block_iclicker_sso_shared_key'] = $secrets->block_iclicker_sso_shared_key;
+                      $CFG->forced_plugin_settings['local_kaltura']['partner_id'] = $secrets->kaltura_partner_id;
+                      $CFG->forced_plugin_settings['local_kaltura']['adminsecret'] = $secrets->kaltura_adminsecret;
+                      $CFG->mylabmastering_key = $secrets->mylabmastering_key;
+                      $CFG->mylabmastering_secret = $secrets->mylabmastering_secret;
+                      $CFG->forced_plugin_settings['mod_zoom']['apikey'] = $secrets->zoom_apikey;
+                      $CFG->forced_plugin_settings['mod_zoom']['apisecret'] = $secrets->zoom_apisecret;
+                      $CFG->forced_plugin_settings['turnitintooltwo']['accountid'] = $secrets->turnitin_accountid;
+                      $CFG->forced_plugin_settings['turnitintooltwo']['secretkey'] = $secrets->turnitin_secretkey;
+                      $CFG->filter_poodll_registrationkey = $secrets->filter_poodll_registrationkey;
+                      $CFG->forced_plugin_settings['block_ucla_media']['bruincast_user'] = $secrets->bruincast_user;
+                      $CFG->forced_plugin_settings['block_ucla_media']['bruincast_pass'] = $secrets->bruincast_pass;
+                  } catch (AwsException $e) {
+                      throw new Exception($e->getAwsErrorCode());
+                  }
+
+              mode: '000644'
+              owner: root
+              group: root
+
+            /tmp/install_moodle.sh:
+              content:  !Sub |
+                #!/bin/bash -xe
+
+                yum install -y git
+
+                echo "Checking out ${DeploymentBranchCommitTag}..."
+                git clone git@github.com:ucla/moodle.git --branch ${DeploymentBranchCommitTag} --single-branch /var/www/moodle/html
+
+                cd /var/www/moodle/html || exit 1
+
+                if ! [ -f "/var/www/moodle/html/lib/aws.phar" ]; then
+                    echo "Downloading aws.phar..."
+                    wget -O /var/www/moodle/html/lib/aws.phar https://docs.aws.amazon.com/aws-sdk-php/v3/download/aws.phar
+                fi
+
+                echo "Updating moodle submodules..."
+                git submodule update --init --recursive --jobs 8 --quiet
+
+                echo "Installing composer..."
+                export COMPOSER_HOME="$HOME/.config/composer"
+                curl -sS http://getcomposer.org/installer | php
+
+                echo "Doing composer install..."
+                php composer.phar install --no-dev
+
+                if [ -L "config.php" ]; then
+                    echo "Config symlink exists, no need to make a new one"
+                else
+                    echo "Using ${Environment} config file..."
+                    ln -s local/ucla/config/shared_${Environment}_moodle-config.php config.php
+                fi
+
+                if ! [ -f "config_private.php" ]; then
+                    if ! [ -f "/tmp/config_private.php" ]; then
+                        echo "File /tmp/config_private.php not found, try refreshing the instances"
+                        exit 1
+                    else
+                        echo "Copying config_private.php..."
+                        cp -p /tmp/config_private.php ./config_private.php
+                    fi
+                else
+                    echo "Config private exists, no need to make a new one"
+                fi
+
+                if ! [ -d /var/www/moodle/ccle_email_templates ]; then
+                    echo "Copying course creator email templates..."
+                    git clone https://github.com/ucla/ccle_email_templates.git /var/www/moodle/ccle_email_templates
+                else
+                    echo "Updating course creator email templates..."
+                    cd /var/www/moodle/ccle_email_templates || exit 1
+                    git pull
+                fi
+
+                chown -R root:apache /var/www/moodle/html
+                chown -R apache:apache /var/www/moodle/local
+
+                echo "Creating Moodle user"
+                adduser -c "Moodle User" moodle
+                usermod -a -G apache moodle
+
+                echo "Setting timezone"
+                timedatectl set-timezone America/Los_Angeles
+
+              mode: 000500
+              owner: root
+              group: root
+          commands:
+            install_moodle:
+              command: ./install_moodle.sh
+              cwd: /tmp
+              ignoreErrors: false
+        install_cacheclient:
+          packages:
+            yum:
+              gcc-c++: []
+          files:
+            /tmp/install_cacheclient.sh:
+              content:
+                !Sub |
+                  #!/bin/bash -xe
+                  sudo yum install -y php-pecl-redis
+
+              mode: 000500
+              owner: root
+              group: root
+          commands:
+            install_cacheclient:
+              command: ./install_cacheclient.sh
+              cwd: /tmp
+              ignoreErrors: false
+        install_opcache:
+          packages:
+            yum:
+              php-opcache: []
+          files:
+            /tmp/install_opcache.sh:
+              content:
+                !Sub |
+                  #!/bin/bash -xe
+                  # create hidden opcache directory locally & change owner to apache
+                  if [ ! -d /var/www/.opcache ]; then
+                      mkdir -p /var/www/.opcache
+                  fi
+                  #Ensure opcache is enabled and add settings recomended by moodle at https://docs.moodle.org/34/en/OPcache
+                  sed -i 's/;opcache.file_cache=.*/opcache.file_cache=\/var\/www\/.opcache/' /etc/php.d/10-opcache.ini
+                  sed -i 's/opcache.memory_consumption=.*/opcache.memory_consumption=512/' /etc/php.d/10-opcache.ini
+                  sed -i 's/opcache.max_accelerated_files=.*/opcache.max_accelerated_files=8000/' /etc/php.d/10-opcache.ini
+                  sed -i 's/;opcache.revalidate_freq=.*/opcache.revalidate_freq=300/' /etc/php.d/10-opcache.ini
+                  sed -i 's/;opcache.use_cwd=.*/opcache.use_cwd=1/' /etc/php.d/10-opcache.ini
+                  sed -i 's/;opcache.validate_timestamps=.*/opcache.validate_timestamps=1/' /etc/php.d/10-opcache.ini
+                  sed -i 's/;opcache.save_comments=.*/opcache.save_comments=1/' /etc/php.d/10-opcache.ini
+                  sed -i 's/;opcache.enable_file_override=.*/opcache.enable_file_override=60/' /etc/php.d/10-opcache.ini
+              mode: 000500
+              owner: root
+              group: root
+          commands:
+            install_opcache:
+              command: ./install_opcache.sh
+              cwd: /tmp
+              ignoreErrors: false
+        install_odbc:
+          files:
+            /tmp/install_odbc.sh:
+              content: |
+                #!/bin/bash -xe
+                amazon-linux-extras install epel -y
+                yum install -y unixODBC unixODBC-devel freetds php-odbc
+
+                # Add FreeTDS driver info to the odbcinst.ini file
+                echo "" >> /etc/odbcinst.ini
+                echo "[FreeTDS]" >> /etc/odbcinst.ini
+                echo "Driver = /usr/lib64/libtdsodbc.so.0" >> /etc/odbcinst.ini
+                echo "UsageCount = 1" >> /etc/odbcinst.ini
+              mode: 000500
+              owner: root
+              group: root
+            /etc/freetds.conf:
+              content: |
+                [global]
+                  # TDS protocol version
+                  tds version = auto
+                [REGISTRAR]
+                    host = srdb.registrar.ucla.edu
+                    port = 1433
+                    tds version = auto
+              mode: '000644'
+              owner: root
+              group: root
+            /etc/odbc.ini:
+              content: |
+                [REGISTRAR]
+                Driver = FreeTDS
+                Description = UCLA Registrar (SRDB)
+                Trace = No
+                Server = srdb.registrar.ucla.edu
+                Port = 1433
+                TDS_Version = auto
+                Database = srdb_sr2
+                TextSize = 64512
+              mode: '000644'
+              owner: root
+              group: root
+          commands:
+            install_odbc:
+              command: ./install_odbc.sh
+              cwd: /tmp
+              ignoreErrors: false
+        install_unoconv:
+          files:
+            /tmp/install_unoconv.sh:
+              content: |
+                #!/bin/bash -xe
+
+                amazon-linux-extras enable libreoffice
+                yum install -y aspell ghostscript libreoffice libreoffice-pyuno
+
+                git clone https://github.com/dagwieers/unoconv.git
+                cp unoconv/unoconv /usr/bin
+
+                systemctl enable unoconv.service
+                systemctl start unoconv.service
+              mode: 000500
+              owner: root
+              group: root
+            /etc/systemd/system/unoconv.service:
+              content: |
+                [Unit]
+                Description=Unoconv listener for document conversions
+                Documentation=https://github.com/dagwieers/unoconv
+                After=network.target remote-fs.target nss-lookup.target
+
+                [Service]
+                Type=simple
+                PIDFile=/var/run/unoconv.pid
+                Environment="UNO_PATH=/opt/libreoffice6.4/program"
+                ExecStart=/usr/bin/unoconv --listener
+
+                [Install]
+                WantedBy=multi-user.target
+              mode: '000644'
+              owner: root
+              group: root
+          commands:
+            install_unoconv:
+              command: ./install_unoconv.sh
+              cwd: /tmp
+              ignoreErrors: false
+        start_cron:
+          files:
+            /tmp/moodle_cron:
+              content: |
+                */1 * * * * /usr/bin/php /usr/local/moodle/root/admin/cli/cron.php >> /home/moodle/logs/moodlecron/moodlecron.out
+
+                # Cron job to process course download request.
+                */10 * * * * /usr/bin/php /usr/local/moodle/root/blocks/ucla_course_download/cli/cron.php
+            /tmp/start_cron.sh:
+              content: |
+                #!/bin/bash -xe
+
+                sudo mkdir -p /home/moodle/logs/moodlecron
+                sudo chown -R moodle:moodle /home/moodle/logs
+
+                echo "Installing cron for moodle user"
+                # NOTE: Will overwrite any entries created outside this method.
+                sudo su -c 'cat /tmp/moodle_cron | crontab' moodle
+              mode: 000500
+              owner: root
+              group: root
+          commands:
+            install_unoconv:
+              command: ./start_cron.sh
+              cwd: /tmp
+              ignoreErrors: false
+    Properties:
+      IamInstanceProfile: !Ref CronInstanceProfile
+      ImageId: !Ref LatestAmiId
+      InstanceMonitoring: true
+      InstanceType: !Ref CronInstanceType
+      KeyName: !Ref EC2KeyName
+      SecurityGroups:
+      - !Ref CronSecurityGroup
+      UserData:
+        "Fn::Base64":
+          !Sub |
+            #!/bin/bash -xe
+            yum update -y
+
+            #Create directory structure
+            mkdir -p /var/www/moodle/html
+            mkdir -p /var/www/moodle/data
+            mkdir -p /var/www/moodle/cache
+            mkdir -p /var/www/moodle/temp
+            mkdir -p /var/www/moodle/local
+
+            #Mount shared storage
+            mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 ${ElasticFileSystem}.efs.${AWS::Region}.amazonaws.com:/data /var/www/moodle/data
+            mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 ${ElasticFileSystem}.efs.${AWS::Region}.amazonaws.com:/cache /var/www/moodle/cache
+            mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 ${ElasticFileSystem}.efs.${AWS::Region}.amazonaws.com:/temp /var/www/moodle/temp
+
+            #Run CloudFormation Init Scripts
+            /opt/aws/bin/cfn-init --configsets deploy_cronserver --verbose --stack ${AWS::StackName} --resource CronLaunchConfiguration --region ${AWS::Region}
+
+Outputs:
+
+  Opcachestatus:
+    Value: !Join [ '', [ !Ref PublicAlbHostname, '/opcache-instanceid.php' ] ]

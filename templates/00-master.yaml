@@ -63,6 +63,11 @@ Metadata:
         - WebAsgMax
         - WebAsgMin
     - Label:
+        default: Cron Tier
+      Parameters:
+        - CronInstanceType
+        - UseCronBoolean
+    - Label:
         default: Moodle
       Parameters:
         - DeploymentKey
@@ -81,6 +86,8 @@ Metadata:
         default: Prefix to name caching instances
       CloudFrontAcmCertificate:
         default: CloudFront Certificate ARN
+      CronInstanceType:
+        default: Cron Tier Instance Type
       DatabaseCmk:
         default: AWS KMS CMK for RDS
       DatabaseEncrpytedBoolean:
@@ -173,6 +180,67 @@ Parameters:
   CloudFrontAcmCertificate:
     AllowedPattern: ^$|(arn:aws:acm:)([a-z0-9/:-])*([a-z0-9])$
     Description: '[ Optional ] The AWS Certification Manager certificate ARN for the CloudFront distribution certificate - this certificate should be created in the us-east-1 (N. Virginia) region and must reference the Moodle domain name you use below.'
+    Type: String
+  CronInstanceType:
+    AllowedValues:
+    - t3.nano
+    - t3.micro
+    - t3.small
+    - t3.medium
+    - t3.large
+    - t3.xlarge
+    - t3.2xlarge
+    - m5.large
+    - m5.xlarge
+    - m5.2xlarge
+    - m5.4xlarge
+    - m5.12xlarge
+    - m5.24xlarge
+    - c5.large
+    - c5.xlarge
+    - c5.2xlarge
+    - c5.4xlarge
+    - c5.9xlarge
+    - c5.18xlarge
+    - r5.large
+    - r5.xlarge
+    - r5.2xlarge
+    - r5.4xlarge
+    - r5.8xlarge
+    - r5.16xlarge
+    - x1.16xlarge
+    - x1.32xlarge
+    - x1e.xlarge
+    - x1e.2xlarge
+    - x1e.4xlarge
+    - x1e.8xlarge
+    - x1e.16xlarge
+    - x1e.32xlarge
+    - d2.xlarge
+    - d2.2xlarge
+    - d2.4xlarge
+    - d2.8xlarge
+    - h1.2xlarge
+    - h1.4xlarge
+    - h1.8xlarge
+    - h1.16xlarge
+    - i3.large
+    - i3.xlarge
+    - i3.2xlarge
+    - i3.4xlarge
+    - i3.8xlarge
+    - i3.16xlarge
+    - f1.2xlarge
+    - f1.16xlarge
+    - g3.4xlarge
+    - g3.8xlarge
+    - g3.16xlarge
+    - p3.2xlarge
+    - p3.8xlarge
+    - p3.16xlarge
+    ConstraintDescription: Must be a valid Amazon EC2 instance type.
+    Default: t3.large
+    Description: The Amazon EC2 instance type for your cron instance.
     Type: String
   DatabaseCmk:
     Description: AWS KMS Customer Master Key (CMK) to encrypt database cluster
@@ -483,6 +551,13 @@ Parameters:
     Default: true
     Description: Specifies whether a CloudFront Distribution should be created to serve the Moodle website content.
     Type: String
+  UseCronBoolean:
+    AllowedValues:
+      - true
+      - false
+    Default: true
+    Description: Specifies whether a Cron server should be created.
+    Type: String
   UseRoute53Boolean:
     AllowedValues:
       - true
@@ -553,6 +628,8 @@ Conditions:
     !Equals [ true, !Ref UseSessionCacheBoolean ]
   DeployApplicationCache:
     !Equals [ true, !Ref UseApplicationCacheBoolean ]
+  DeployCron:
+    !Equals [ true, !Ref UseCronBoolean ]
   DeployRoute53:
     !Equals [ true, !Ref UseRoute53Boolean ]
   DeployCloudFront:
@@ -875,6 +952,52 @@ Resources:
         ShibbolethKey:
           !Ref ShibbolethKey
       TemplateURL: !Sub https://cat-ccle-aws-refarch-moodle${TemplateSource}.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/04-web.yaml
+  cron:
+    Condition: DeployCron
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        ApplicationElastiCacheClusterEndpointAddress:
+          !If [DeployApplicationCache, !GetAtt applicationcache.Outputs.ElastiCacheClusterEndpointAddress, '']
+        CachePrefix:
+          !Ref CachePrefix
+        CronInstanceType:
+          !Ref CronInstanceType
+        CronSecurityGroup:
+          !GetAtt [ securitygroups, Outputs.WebSecurityGroup ]
+        DatabaseClusterEndpointAddress:
+          !GetAtt [ rds, Outputs.DatabaseClusterEndpointAddress ]
+        DatabaseClusterReadEndpointAddress:
+          !GetAtt [ rds, Outputs.DatabaseClusterReadEndpointAddress ]
+        DatabaseName:
+          !Ref DatabaseName
+        DeploymentBranchCommitTag:
+          !Ref DeploymentBranchCommitTag
+        DeploymentKey:
+          !Ref DeploymentKey
+        DomainName:
+          !Ref DomainName
+        EC2KeyName:
+          !Ref EC2KeyName
+        ElasticFileSystem:
+          !GetAtt [ efsfilesystem, Outputs.ElasticFileSystem ]
+        Environment:
+          !Ref Environment
+        MoodleConfigSecretArn:
+          !Ref MoodleConfigSecret
+        MyRDSInstanceSecretArn:
+          !Ref MyRDSInstanceSecret
+        NumberOfSubnets:
+          !Ref NumberOfAZs
+        PublicAlbHostname:
+          !GetAtt [ publicalb, Outputs.PublicAlbHostname ]
+        SessionElastiCacheClusterEndpointAddress:
+          !If [DeployWithSessionCache, !GetAtt sessioncache.Outputs.ElastiCacheClusterEndpointAddress, '']
+        Subnet:
+          !Join [',', !Ref PrivateSubnets]
+        VpcCidr:
+          !Ref VpcCidr
+      TemplateURL: !Sub https://cat-ccle-aws-refarch-moodle${TemplateSource}.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/04-cron.yaml
   cloudfront:
     Condition: DeployCloudFront
     DependsOn: publicalb
