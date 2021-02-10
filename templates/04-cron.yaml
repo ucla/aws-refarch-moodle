@@ -8,16 +8,13 @@ Metadata:
   AWS::CloudFormation::Interface:
     ParameterGroups:
     - Label:
-        default: Web Parameters
+        default: Cron Parameters
       Parameters:
         - EC2KeyName
-        - WebInstanceType
-        - WebAsgMax
-        - WebAsgMin
-        - WebSecurityGroup
+        - CronInstanceType
+        - CronSecurityGroup
         - NumberOfSubnets
         - Subnet
-        - PublicAlbTargetGroupArn
         - PublicAlbHostname
         - SslCertificate
         - VpcCidr
@@ -39,11 +36,6 @@ Metadata:
         default: File System Parameters
       Parameters:
         - ElasticFileSystem
-    - Label:
-        default: Shibboleth
-      Parameters:
-        - ShibbolethCertificate
-        - ShibbolethKey
     ParameterLabels:
       DatabaseClusterReadEndpointAddress:
         default: DB Cluster Read Only Endpoint Address
@@ -65,26 +57,16 @@ Metadata:
         default: Existing Key Pair
       NumberOfSubnets:
         default: Number of subnets
-      PublicAlbTargetGroupArn:
-        default: Public ALB Target Group Arn
       PublicAlbHostname:
         default: Public ALB Hostname
-      ShibbolethCertificate:
-        default: Shibboleth Certificate ARN
-      ShibbolethKey:
-        default: Shibboleth Private Key ARN
       SslCertificate:
         default: ACM Cert attached to Public ALB
       Subnet:
         default: Subnets
-      WebAsgMax:
-        default: Web ASG Max
-      WebAsgMin:
-        default: Web ASG Min
-      WebInstanceType:
-        default: Web Instance Type
-      WebSecurityGroup:
-        default: Web Security Group
+      CronInstanceType:
+        default: Cron Instance Type
+      CronSecurityGroup:
+        default: Cron Security Group
       DomainName:
         default: Site Domain
 
@@ -95,9 +77,6 @@ Parameters:
     Type: String
   ApplicationElastiCacheClusterEndpointAddress:
     Description: The Application ElastiCacheCluster cluster endpoint address.
-    Type: String
-  ShibbolethElastiCacheClusterEndpointAddress:
-    Description: The Shibboleth ElastiCacheCluster cluster endpoint address.
     Type: String
   DatabaseClusterReadEndpointAddress:
     Description: The RDS cluster read only endpoint address.
@@ -133,7 +112,7 @@ Parameters:
     Type: String
     Default: moodle
   DeploymentKey:
-    AllowedPattern: ^$|(arn:aws:secretsmanager:)([a-zA-Z0-9:.-])*$
+    AllowedPattern: ^$|(arn:aws:secretsmanager:)([a-zA-Z0-9:-])*$
     Description: '[ Optional ] The AWS Certification Manager certificate ARN for the ALB certificate - this certificate should be created in the region you wish to run the ALB and must reference the domain name you use below.'
     Type: String
   DeploymentBranchCommitTag:
@@ -150,7 +129,7 @@ Parameters:
   EC2KeyName:
     AllowedPattern: ^([a-zA-Z0-9 @.`~!#$%^&*()_+,\\-])*$
     ConstraintDescription: Must be letters (upper or lower), numbers, and special characters.
-    Description: Name of an EC2 KeyPair. Your bastion & Web instances will launch with this KeyPair.
+    Description: Name of an EC2 KeyPair. Your bastion & Cron instances will launch with this KeyPair.
     Type: AWS::EC2::KeyPair::KeyName
   NumberOfSubnets:
     AllowedValues:
@@ -162,19 +141,8 @@ Parameters:
     Default: 2
     Description: Number of subnets. This must match your selections in the list of subnets below.
     Type: String
-  PublicAlbTargetGroupArn:
-    Description: The public application load balancer target group arn.
-    Type: String
   PublicAlbHostname:
     Description: The hostname of the public ALB http form (e.g. http://abdc-12345-xyz.<region>.elb.amazonaws.com)
-    Type: String
-  ShibbolethCertificate:
-    AllowedPattern: ^$|(arn:aws:secretsmanager:)([a-zA-Z0-9:.-])*$
-    Description: 'The Secret Manager ARN for the private SSH key used for Shibboleth'
-    Type: String
-  ShibbolethKey:
-    AllowedPattern: ^$|(arn:aws:secretsmanager:)([a-zA-Z0-9:.-])*$
-    Description: 'The Secret Manager ARN for the signed certificate for Shibboleth'
     Type: String
   SslCertificate:
     AllowedValues:
@@ -193,19 +161,7 @@ Parameters:
     Default: 10.0.0.0/16
     Description: CIDR block for the VPC
     Type: String
-  WebAsgMax:
-    AllowedPattern: ^((?!0$)[1-2]?[0-9]|30)$
-    ConstraintDescription: Must be a number between 1 and 30.
-    Default: 4
-    Description: Specifies the maximum number of EC2 instances in the Web Autoscaling Group.
-    Type: String
-  WebAsgMin:
-    AllowedPattern: ^([0-0]?[0-9]|10)$
-    ConstraintDescription: Must be a number between 0 and 10.
-    Default: 2
-    Description: Specifies the minimum number of EC2 instances in the Web Autoscaling Group.
-    Type: String
-  WebInstanceType:
+  CronInstanceType:
     AllowedValues:
     - t3.nano
     - t3.micro
@@ -266,15 +222,12 @@ Parameters:
     Default: t3.large
     Description: The Amazon EC2 instance type for your web instances.
     Type: String
-  WebSecurityGroup:
+  CronSecurityGroup:
     Description: Select the web security group.
     Type: AWS::EC2::SecurityGroup::Id
   DomainName:
     AllowedPattern: ^$|(([a-zA-Z0-9]|[a-zA-Z0-9][a-zA-Z0-9\-]*[a-zA-Z0-9])\.)*([A-Za-z0-9]|[A-Za-z0-9][A-Za-z0-9\-]*[A-Za-z0-9])$
     Description: '[ Optional ] The main domain name of the Moodle site (e.g. moodle.example.edu). Leave empty to use the ALB DNS name for the Moodle site.'
-    Type: String
-  ServerUrl:
-    Description: Either DomainName or PublicAlbHostname
     Type: String
   LatestAmiId :
     Type : AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
@@ -328,13 +281,13 @@ Conditions:
 
 
 Resources:
-  WebInstanceProfile:
+  CronInstanceProfile:
     Type: AWS::IAM::InstanceProfile
     Properties:
       Path: /
       Roles:
-      - !Ref WebInstanceRole
-  WebInstanceRole:
+      - !Ref CronInstanceRole
+  CronInstanceRole:
     Type: AWS::IAM::Role
     Properties:
       AssumeRolePolicyDocument:
@@ -382,28 +335,24 @@ Resources:
             - !Ref MyRDSInstanceSecretArn
             - !Ref MoodleConfigSecretArn
             - !Ref DeploymentKey
-            - !Ref ShibbolethCertificate
-            - !Ref ShibbolethKey
   Logs:
       Type: AWS::Logs::LogGroup
       DeletionPolicy: Retain
       Properties:
         RetentionInDays: 7
-  WebAutoScalingGroup:
+  CronAutoScalingGroup:
     Type: AWS::AutoScaling::AutoScalingGroup
     Properties:
       Cooldown: '60'
       HealthCheckGracePeriod: 600
-      HealthCheckType: ELB
-      LaunchConfigurationName: !Ref WebLaunchConfiguration
-      MaxSize: !Ref WebAsgMax
-      MinSize: !Ref WebAsgMin
+      HealthCheckType: EC2
+      LaunchConfigurationName: !Ref CronLaunchConfiguration
+      MaxSize: '1'
+      MinSize: '1'
       Tags:
         - Key: Name
-          Value: !Join [ '', [ 'Web ASG / ', !Ref 'AWS::StackName' ] ]
+          Value: !Join [ '', [ 'Cron ASG / ', !Ref 'AWS::StackName' ] ]
           PropagateAtLaunch: true
-      TargetGroupARNs:
-        - !Ref PublicAlbTargetGroupArn
       VPCZoneIdentifier:
         !If
           [ NumberOfSubnets1,
@@ -428,82 +377,43 @@ Resources:
           ]
     CreationPolicy:
       ResourceSignal:
-        Count: !Ref WebAsgMin
+        Count: 0
         Timeout: PT15M
-
-  ScaleUpPolicy:
+    UpdatePolicy:
+      AutoScalingReplacingUpdate:
+        WillReplace: true
+  AutoScalingPolicy:
     Type: AWS::AutoScaling::ScalingPolicy
     Properties:
       AdjustmentType: ChangeInCapacity
-      AutoScalingGroupName:
-        Ref: WebAutoScalingGroup
-      Cooldown: '600'
+      AutoScalingGroupName: !Ref CronAutoScalingGroup
+      Cooldown: '60'
+      PolicyType: SimpleScaling
       ScalingAdjustment: 1
-  CPUAlarmHigh:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      EvaluationPeriods: 3
-      Statistic: Average
-      Threshold: 75
-      AlarmDescription: Alarm if CPU too high
-      Period: 60
-      AlarmActions:
-      - Ref: ScaleUpPolicy
-      Namespace: AWS/EC2
-      Dimensions:
-      - Name: AutoScalingGroupName
-        Value: !Ref WebAutoScalingGroup
-      ComparisonOperator: GreaterThanThreshold
-      MetricName: CPUUtilization
-  ScaleDownPolicy:
-    Type: AWS::AutoScaling::ScalingPolicy
-    Properties:
-      AdjustmentType: ChangeInCapacity
-      AutoScalingGroupName:
-        Ref: WebAutoScalingGroup
-      Cooldown: '300'
-      ScalingAdjustment: -1
-  CPUAlarmLow:
-    Type: AWS::CloudWatch::Alarm
-    Properties:
-      EvaluationPeriods: 3
-      Statistic: Average
-      Threshold: 25
-      AlarmDescription: Alarm if CPU too low
-      Period: 60
-      AlarmActions:
-      - Ref: ScaleDownPolicy
-      Namespace: AWS/EC2
-      Dimensions:
-      - Name: AutoScalingGroupName
-        Value: !Ref WebAutoScalingGroup
-      ComparisonOperator: LessThanThreshold
-      MetricName: CPUUtilization
 
-  WebLaunchConfiguration:
+  CronLaunchConfiguration:
     Type: AWS::AutoScaling::LaunchConfiguration
     Metadata:
       AWS::CloudFormation::Init:
         configSets:
-          deploy_webserver:
+          deploy_cronserver:
             - install_logs
             - install_deploymentkey
-            - install_webserver
+            - install_php
             - install_moodle
             - install_cacheclient
             - install_opcache
             - install_odbc
             - install_unoconv
-            - install_shibboleth
-            - start_webserver
+            - start_cron
 
-        install_webserver:
+        install_php:
           files:
             /tmp/create_site_conf.sh:
               content: !Sub |
                 #!/bin/bash -xe
                 amazon-linux-extras install -y php7.3
-                yum install -y awslogs httpd mysql php-gd php-soap php-intl php-mbstring php-xmlrpc php-zip php-pecl-mcrypt
+                yum install -y awslogs mysql php-gd php-soap php-intl php-mbstring php-xmlrpc php-zip php-pecl-mcrypt
                 # Change memory limit to help with large backup/restore
                 sed -i 's/memory_limit =.*/memory_limit = 8192M/' /etc/php.ini
                 sed -i 's/max_execution_time =.*/max_execution_time = 300/' /etc/php.ini
@@ -519,36 +429,6 @@ Resources:
                 # Needed for Gradebook since it can have so many fields
                 sed -i 's/max_input_vars =.*/max_input_vars = 10000/' /etc/php.ini
                 sed -i 's/;date.timezone =.*/date.timezone = America\/Los_Angeles/' /etc/php.ini
-
-                # Switich from Prefork MPM to Event MPM
-                sed -i 's/LoadModule mpm_prefork_module/#LoadModule mpm_prefork_module/' /etc/httpd/conf.modules.d/00-mpm.conf
-                sed -i 's/#LoadModule mpm_event_module/LoadModule mpm_event_module/' /etc/httpd/conf.modules.d/00-mpm.conf
-
-                # Setup Sendfile
-                amazon-linux-extras install epel -y
-                yum install -y mod_xsendfile
-                # Set Moodle directories to have Sendfile support
-                echo '<IfModule mod_xsendfile.c>' >> /etc/httpd/conf.modules.d/xsendfile.conf
-                echo '  XSendFile on' >> /etc/httpd/conf.modules.d/xsendfile.conf
-                echo '  XsendFilePath /var/www/moodle/html' >> /etc/httpd/conf.modules.d/xsendfile.conf
-                echo '  XSendFilePath /var/www/moodle/data' >> /etc/httpd/conf.modules.d/xsendfile.conf
-                echo '  XSendFilePath /var/www/moodle/cache' >> /etc/httpd/conf.modules.d/xsendfile.conf
-                echo '  XsendFilePath /var/www/moodle/temp' >> /etc/httpd/conf.modules.d/xsendfile.conf
-                echo '  XsendFilePath /var/www/moodle/local' >> /etc/httpd/conf.modules.d/xsendfile.conf
-                echo '</IfModule>' >> /etc/httpd/conf.modules.d/xsendfile.conf
-
-                # Install SSL
-                yum install -y mod_ssl
-                openssl req \
-                  -nodes \
-                  -newkey rsa:2048 \
-                  -keyout /etc/pki/tls/private/localhost.key \
-                  -out /etc/ssl/certs/localhost.csr \
-                  -subj "/C=US/ST=California/L=Los Angeles/O=University of California, Los Angeles/OU=CCLE/CN=localhost"
-                openssl x509 -req -sha256 -days 3650 \
-                        -in /etc/ssl/certs/localhost.csr \
-                        -signkey /etc/pki/tls/private/localhost.key \
-                        -out /etc/ssl/certs/localhost.crt
 
               mode: 000500
               owner: root
@@ -598,22 +478,16 @@ Resources:
                 log_stream_name = {instance_id}/cfn-wire.log
                 datetime_format =
 
-                [/var/log/httpd]
-                file = /var/log/httpd/*
-                log_group_name = ${Logs}
-                log_stream_name = {instance_id}/httpd
-                datetime_format = %d/%b/%Y:%H:%M:%S
-
                 [/var/log/php-fpm]
                 file = /var/log/php-fpm/*
                 log_group_name = ${Logs}
                 log_stream_name = {instance_id}/php-fpm
                 datetime_format =
 
-                [/var/log/shibboleth]
-                file = /var/log/shibboleth/*
+                [/home/moodle/logs/moodlecron]
+                file = /home/moodle/logs/moodlecron/moodlecron.out
                 log_group_name = ${Logs}
-                log_stream_name = {instance_id}/shibboleth
+                log_stream_name = {instance_id}/moodlecron
                 datetime_format =
 
               mode: '000444'
@@ -666,66 +540,6 @@ Resources:
               ignoreErrors: false
         install_moodle:
           files:
-            /etc/httpd/conf.d/moodle.conf:
-              content: |
-                TimeOut 300
-                ServerName 127.0.0.1:80'
-                DocumentRoot /var/www/moodle/html
-                <Directory /var/www/moodle/html>
-                  Options +Includes -Indexes +FollowSymLinks
-                  DirectoryIndex index.php
-                  AcceptPathInfo on
-                  AllowOverride All
-                  Require all granted
-                </Directory>
-
-                <Directory "/var/www/moodle/html/course">
-                  #####################################################################
-                  #   -- Apache hook for "friendly URLs" --
-                  #   This local override file allows for course urls that come in as
-                  #   course/view/SHOTNAME to be translated to the correct
-                  #   destination within the server.
-                  #####################################################################
-
-                  # NOTE: make sure Moodle folder is not mapped via Alias - options below
-                  # won't work with it for some reason
-                  RewriteEngine On
-
-                  <IfModule negotiation_module>
-                    # MultiViews has to be off, otherwise mod_negotiation will match
-                    # /view/ with view.php, and skip RewriteRule
-                    Options -MultiViews
-                  </IfModule>
-
-                  # Other scripts in the course/ folder linked relatively from view.php will end
-                  # up having an invalid URL view/scriptname.php. If the file ends with .php or
-                  # .html, remove view/ from the path, and do not advance to next RewriteRule
-                  RewriteRule ^view/(.+)\.(php|html)$ $1.$2 [NC,NE,QSA,PT]
-
-                  # Expand pretty view/shortname to a proper parameter
-                  #
-                  # Use this one if this file is in the /course directory
-                  RewriteRule ^view/(.+)$ view.php?name=$1 [NC,NE,QSA,PT]
-
-                  # Store the relative URL we are working with. Strange, but RewriteCond doesn't
-                  # have it!?
-                  RewriteRule ^.*$ - [NE,E=REL_PATH:$0]
-
-                  # check if it contains "/" and is NOT one of the existing course/* folders
-                  RewriteCond %{ENV:REL_PATH} /
-                  RewriteCond %{ENV:REL_PATH} !^format/ [NC]
-                  RewriteCond %{ENV:REL_PATH} !^import/ [NC]
-                  RewriteCond %{ENV:REL_PATH} !^report/ [NC]
-                  RewriteCond %{ENV:REL_PATH} !^ajax/ [NC]
-                  RewriteRule ^.+$ ../$0 [NC,NE,QSA,PT]
-
-                  #####################################################################
-                  #   -- END Apache hook for "friendly URLs" --
-                  #####################################################################
-                </Directory>
-              mode: '000644'
-              owner: root
-              group: root
             /tmp/config_private.php:
               content: !Sub |
                   <?php
@@ -867,14 +681,6 @@ Resources:
                   } catch (AwsException $e) {
                       throw new Exception($e->getAwsErrorCode());
                   }
-
-                  // Setup Shibboleth.
-                  $CFG->alternateloginurl = $CFG->wwwroot . '/login/ucla_login.php?shibboleth';
-                  $CFG->forced_plugin_settings['auth_shibboleth']['convert_data'] = '/var/www/moodle/html/shib_transform.php';
-                  $CFG->forced_plugin_settings['auth_shibboleth']['logout_handler'] = $CFG->wwwroot . '/Shibboleth.sso/Logout';
-                  $CFG->forced_plugin_settings['auth_shibboleth']['logout_return_url'] =
-                          'https://shb.ais.ucla.edu/shibboleth-idp/Logout?entityId=' .
-                          $CFG->wwwroot . ' &return=' . $CFG->wwwroot;
 
               mode: '000644'
               owner: root
@@ -1088,256 +894,41 @@ Resources:
               command: ./install_unoconv.sh
               cwd: /tmp
               ignoreErrors: false
-        install_shibboleth:
+        start_cron:
           files:
-            /tmp/install_shibboleth.sh:
-              content: !Sub |
+            /tmp/moodle_cron:
+              content: |
+                # Run Moodle cron every minute.
+                */1 * * * * /usr/bin/php /var/www/moodle/html/admin/cli/cron.php >> /home/moodle/logs/moodlecron/moodlecron.out
+
+                # Cron job to process course download request.
+                */10 * * * * /usr/bin/php /var/www/moodle/html/blocks/ucla_course_download/cli/cron.php
+            /tmp/start_cron.sh:
+              content: |
                 #!/bin/bash -xe
 
-                curl -o /etc/yum.repos.d/shibboleth.repo http://download.opensuse.org/repositories/security://shibboleth/CentOS_7/security:shibboleth.repo
-                yum install -y shibboleth
+                sudo mkdir -p /home/moodle/logs/moodlecron
+                sudo chown -R moodle:moodle /home/moodle/logs
 
-                cd /etc/shibboleth
-                wget http://md.incommon.org/certs/inc-md-cert-mdq.pem
-
-                echo "Copying xml files..."
-                mv /tmp/attribute-map.xml /etc/shibboleth
-                mv /tmp/shibboleth2.xml /etc/shibboleth
-
-                echo "Copying SSL keys and certificate..."
-                aws configure set region ${AWS::Region}
-                aws secretsmanager get-secret-value --secret-id ${ShibbolethCertificate} | jq -r '.SecretString' > /etc/pki/tls/certs/shib_self_signed_cert.crt
-                chmod 440 /etc/pki/tls/certs/shib_self_signed_cert.crt
-                chown root:shibd /etc/pki/tls/certs/shib_self_signed_cert.crt
-                aws secretsmanager get-secret-value --secret-id ${ShibbolethKey} | jq -r '.SecretString' > /etc/pki/tls/private/shib_private.key
-                chmod 440 /etc/pki/tls/private/shib_private.key
-                chown root:shibd /etc/pki/tls/private/shib_private.key
-
-                echo "Starting Shibboleth..."
-                systemctl enable shibd
-                systemctl start shibd
+                echo "Installing cron for moodle user"
+                # NOTE: Will overwrite any entries created outside this method.
+                sudo su -c 'cat /tmp/moodle_cron | crontab' moodle
               mode: 000500
               owner: root
               group: root
-            /etc/httpd/conf.d/shib.conf:
-              content: |
-                # Load the Shibboleth module.
-                #
-                LoadModule mod_shib /usr/lib64/shibboleth/mod_shib_24.so
-
-                #
-                # Turn this on to support "require valid-user" rules from other
-                # mod_authn_* modules, and use "require shib-session" for anonymous
-                # session-based authorization in mod_shib.
-                #
-                ShibCompatValidUser Off
-
-                #
-                # Ensures handler will be accessible.
-                #
-                <Location /Shibboleth.sso>
-                  AuthType None
-                  Require all granted
-                </Location>
-
-                #
-                # Used for example style sheet in error templates.
-                #
-                <IfModule mod_alias.c>
-                  <Location /shibboleth-sp>
-                    AuthType None
-                    Require all granted
-                  </Location>
-                  Alias /shibboleth-sp/main.css /usr/share/shibboleth/main.css
-                </IfModule>
-
-                #
-                # Configure the module for content.
-                #
-                # You MUST enable AuthType shibboleth for the module to process
-                # any requests, and there MUST be a require command as well. To
-                # enable Shibboleth but not specify any session/access requirements
-                # use "require shibboleth".
-                #
-                <Location /secure>
-                  AuthType shibboleth
-                  ShibRequestSetting requireSession 1
-                  require shib-session
-                </Location>
-
-                <Location ~ "/auth/shibboleth">
-                  AuthType shibboleth
-                  ShibRedirectToSSL 443
-                  require shib-session
-                  ShibRequestSetting requireSession 1
-                </Location>
-              mode: '000644'
-              owner: root
-              group: root
-
-            /etc/httpd/conf.d/remoteip.conf:
-              content: |
-                LoadModule remoteip_module modules/mod_remoteip.so
-                <IfModule mod_remoteip.c>
-                  RemoteIPHeader X-Forwarded-For
-                </IfModule>
-              mode: '000644'
-              owner: root
-              group: root
-            /tmp/attribute-map.xml:
-              content: |
-                <?xml version="1.0"?>
-                <Attributes xmlns="urn:mace:shibboleth:2.0:attribute-map" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
-                  <Attribute name="urn:oid:2.16.840.1.113898.1.2.1.24" id="SHIBUCLAUNIVERSITYID"/>
-                  <Attribute name="urn:oid:2.16.840.1.113730.3.1.241" id="SHIBDISPLAYNAME"/>
-                  <Attribute name="urn:oid:2.5.4.3" id="SHIBCN"/>
-                  <Attribute name="urn:oid:2.5.4.4" id="SHIBSN"/>
-                  <Attribute name="urn:oid:2.5.4.42" id="SHIBGIVENNAME"/>
-                  <Attribute name="urn:oid:2.16.840.1.113898.1.2.1.29" id="SHIBUCLABOLEMAIL"/>
-                  <Attribute name="urn:oid:2.16.840.1.113898.1.2.1.2" id="SHIBUCLAPERSONNAMESUFFIX"/>
-                  <Attribute name="urn:oid:2.16.840.1.113898.1.2.1.9" id="SHIBUCLAEMPLOYEENICKNAME"/>
-                  <Attribute name="urn:oid:2.16.840.1.113898.1.2.1.28" id="SHIBUCLAOFFICIALEMAIL"/>
-                  <Attribute name="urn:oid:2.16.840.1.113898.1.2.1.1" id="SHIBUCLAPERSONMIDDLENAME"/>
-                  <Attribute name="urn:oid:2.16.840.1.113898.1.2.1.23" id="SHIBUCLALOGONID"/>
-                  <Attribute name="urn:oid:1.3.6.1.4.1.5923.1.1.1.6" id="SHIBEDUPERSONPRINCIPALNAME">
-                    <AttributeDecoder xsi:type="ScopedAttributeDecoder"/>
-                  </Attribute>
-                  <Attribute name="urn:oid:0.9.2342.19200300.100.1.3" id="SHIBMAIL"/>
-                  <Attribute name="urn:oid:1.3.6.1.4.1.5923.1.1.1.1" id="SHIBEDUPERSONAFFILIATION">
-                    <AttributeDecoder xsi:type="StringAttributeDecoder" caseSensitive="false"/>
-                  </Attribute>
-                  <Attribute name="urn:oid:1.3.6.1.4.1.5923.1.1.1.2" id="SHIBEDUPERSONNICKNAME"/>
-                  <Attribute name="urn:oid:1.3.6.1.4.1.5923.1.1.1.10" id="SHIBEDUPERSONTARGETEDID">
-                    <AttributeDecoder formatter="$Name" xsi:type="NameIDAttributeDecoder"/>
-                  </Attribute>
-                </Attributes>
-              mode: '000644'
-              owner: root
-              group: root
-            /tmp/shibboleth2.xml:
-              content: !Sub |
-                <SPConfig
-                  xmlns="urn:mace:shibboleth:3.0:native:sp:config"
-                  xmlns:conf="urn:mace:shibboleth:3.0:native:sp:config"
-                  xmlns:saml="urn:oasis:names:tc:SAML:2.0:assertion"
-                  xmlns:samlp="urn:oasis:names:tc:SAML:2.0:protocol"
-                  xmlns:md="urn:oasis:names:tc:SAML:2.0:metadata"
-                    clockSkew="180">
-                  <OutOfProcess>
-                    <Extensions>
-                      <Library path="memcache-store.so" fatal="true"/>
-                    </Extensions>
-                  </OutOfProcess>
-                  <StorageService type="MEMCACHE" id="mc" prefix="SHIB:">
-                    <Hosts>
-                        ${ShibbolethElastiCacheClusterEndpointAddress}:11211
-                      </Hosts>
-                  </StorageService>
-                  <StorageService type="MEMCACHE" id="mc-ctx" prefix="SHIB_CTX:" buildMap="1">
-                    <Hosts>
-                        ${ShibbolethElastiCacheClusterEndpointAddress}:11211
-                      </Hosts>
-                  </StorageService>
-                  <SessionCache type="StorageService"
-                      cacheAllowance="7200"
-                      inprocTimeout="900"
-                      cleanupInterval="900"
-                      StorageService="mc-ctx"
-                      StorageServiceLite="mc" />
-                  <ReplayCache StorageService="mc"/>
-                  <ArtifactMap StorageService="mc" artifactTTL="180"/>
-                  <!-- The ApplicationDefaults element is where most of Shibboleth's SAML bits are defined. -->
-                  <ApplicationDefaults
-                        id="default"
-                        policyId="default"
-                        entityID="${ServerUrl}"
-                        homeURL="${ServerUrl}"
-                        REMOTE_USER="HTTP_SHIB_EDUPERSON_PRINCIPALNAME"
-                        signing="false"
-                        encryption="false">
-                    <!-- Set the Sessions lifetime to 4 hours to match Moodle's session timeout and php.ini's session.gc_maxlife -->
-                    <Sessions lifetime="14400"
-                        timeout="3600"
-                        checkAddress="false"
-                        handlerURL="/Shibboleth.sso"
-                        handlerSSL="true"
-                        idpHistory="false"
-                        idpHistoryDays="7"
-                        cookieProps="; path=/; secure; HttpOnly">
-                      <!-- Configures SSO for a default IdP.  -->
-                      <SSO entityID="urn:mace:incommon:ucla.edu">
-                        SAML2 SAML1
-                      </SSO>
-                      <!-- SAML and local-only logout. -->
-                      <Logout>SAML2 Local</Logout>
-                      <!-- Extension service that generates "approximate" metadata based on SP configuration. -->
-                      <Handler type="MetadataGenerator" Location="/Metadata" signing="false"/>
-                      <!-- Status reporting service. -->
-                      <Handler type="Status" Location="/Status" acl="127.0.0.1 ::1"/>
-                      <!-- Session diagnostic service. -->
-                      <Handler type="Session" Location="/Session" showAttributeValues="false"/>
-                      <!-- JSON feed of discovery information. -->
-                      <Handler type="DiscoveryFeed" Location="/DiscoFeed"/>
-                    </Sessions>
-                    <!-- Allows overriding of error template information/filenames. -->
-                    <Errors supportContact="root@localhost"
-                        redirectErrors="/local/ucla/shiberror.php"
-                        styleSheet="/shibboleth-sp/main.css"/>
-                    <MetadataProvider type="MDQ"
-                        id="incommon"
-                        ignoreTransport="true"
-                        cacheDirectory="/var/cache/shibboleth/inc-mdq-cache"
-                        maxCacheDuration="86400"
-                        minCacheDuration="60"
-                        baseUrl="https://mdq.incommon.org/">
-                      <MetadataFilter type="Signature" certificate="inc-md-cert-mdq.pem"/>
-                      <MetadataFilter type="RequireValidUntil" maxValidityInterval="1209600"/>
-                      <!-- Consume all IdP metadata in the aggregate -->
-                      <MetadataFilter type="EntityRoleWhiteList">
-                        <RetainedRole>md:IDPSSODescriptor</RetainedRole>
-                        <RetainedRole>md:AttributeAuthorityDescriptor</RetainedRole>
-                      </MetadataFilter>
-                    </MetadataProvider>
-                    <!-- Map to extract attributes from SAML assertions. -->
-                    <AttributeExtractor type="XML" validate="true" reloadChanges="false" path="attribute-map.xml"/>
-                    <!-- Use a SAML query if no attributes are supplied during SSO. -->
-                    <AttributeResolver type="Query" subjectMatch="true"/>
-                    <!-- Default filtering policy for recognized attributes, lets other data pass. -->
-                    <AttributeFilter type="XML" validate="true" path="attribute-policy.xml"/>
-                    <!-- Simple file-based resolver for using a single keypair. -->
-                    <CredentialResolver type="Chaining">
-                      <CredentialResolver type="File" key="/etc/pki/tls/private/shib_private.key" certificate="/etc/pki/tls/certs/shib_self_signed_cert.crt"/></CredentialResolver>
-                  </ApplicationDefaults>
-                  <!-- Policies that determine how to process and authenticate runtime messages. -->
-                  <SecurityPolicyProvider type="XML" validate="true" path="security-policy.xml"/>
-                  <!-- Low-level configuration about protocols and bindings available for use. -->
-                  <ProtocolProvider type="XML" validate="true" reloadChanges="false" path="protocols.xml"/>
-                </SPConfig>
-              mode: '000644'
-              owner: root
-              group: root
           commands:
-            install_shibboleth:
-              command: ./install_shibboleth.sh
+            install_unoconv:
+              command: ./start_cron.sh
               cwd: /tmp
               ignoreErrors: false
-        start_webserver:
-          services:
-            sysvinit:
-              php-fpm:
-                enabled: true
-                ensureRunning: true
-              httpd:
-                enabled: true
-                ensureRunning: true
     Properties:
-      IamInstanceProfile: !Ref WebInstanceProfile
+      IamInstanceProfile: !Ref CronInstanceProfile
       ImageId: !Ref LatestAmiId
       InstanceMonitoring: true
-      InstanceType: !Ref WebInstanceType
+      InstanceType: !Ref CronInstanceType
       KeyName: !Ref EC2KeyName
       SecurityGroups:
-      - !Ref WebSecurityGroup
+      - !Ref CronSecurityGroup
       UserData:
         "Fn::Base64":
           !Sub |
@@ -1357,9 +948,8 @@ Resources:
             mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 ${ElasticFileSystem}.efs.${AWS::Region}.amazonaws.com:/temp /var/www/moodle/temp
 
             #Run CloudFormation Init Scripts
-            /opt/aws/bin/cfn-init --configsets deploy_webserver --verbose --stack ${AWS::StackName} --resource WebLaunchConfiguration --region ${AWS::Region}
-            /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource WebAutoScalingGroup --region ${AWS::Region}
-
+            /opt/aws/bin/cfn-init --configsets deploy_cronserver --verbose --stack ${AWS::StackName} --resource CronLaunchConfiguration --region ${AWS::Region}
+            /opt/aws/bin/cfn-signal --exit-code $? --stack ${AWS::StackName} --resource CronAutoScalingGroup --region ${AWS::Region}
 
 Outputs:
 
