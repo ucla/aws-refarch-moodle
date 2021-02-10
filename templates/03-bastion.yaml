@@ -34,10 +34,10 @@ Parameters:
     Type: AWS::EC2::SecurityGroup::Id
   BastionInstanceType:
     AllowedValues:
-    - t2.nano
-    - t3.nano
+    - t4g.nano
+    - t4g.micro
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
-    Default: t3.nano
+    Default: t4g.nano
     Description: Bastion EC2 instance type.
     Type: String
   EC2KeyName:
@@ -58,8 +58,7 @@ Parameters:
     Type: List<AWS::EC2::Subnet::Id>
   LatestAmiId :
     Type : AWS::SSM::Parameter::Value<AWS::EC2::Image::Id>
-    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-x86_64-gp2
-
+    Default: /aws/service/ami-amazon-linux-latest/amzn2-ami-hvm-arm64-gp2
 
 Conditions:
 
@@ -151,8 +150,7 @@ Resources:
       SecurityGroups:
         - !Ref BastionSecurityGroup
       UserData:
-        "Fn::Base64":
-          !Sub |
+        "Fn::Base64": |
             #!/bin/bash -xe
             yum update -y
   BastionInstanceProfile:

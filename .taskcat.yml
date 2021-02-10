@@ -3,7 +3,7 @@ project:  # Project specific configuration section
   name:  aws-refarch-moodle
   parameters:
     AvailabilityZones: $[taskcat_genaz_2]
-    BastionInstanceType: t3.nano
+    BastionInstanceType: t4g.nano
     CachePrefix: 'ccle'
     CloudFrontAcmCertificate: ''
     DatabaseCmk: 'arn:aws:kms:us-west-2:095974944794:key/dcd37fd9-8fbf-4342-81a8-548681df5ffa'

@@ -25,7 +25,6 @@ Metadata:
         - VpcId
         - PublicSubnets
         - PrivateSubnets
-
     - Label:
         default: File System Tier
       Parameters:
@@ -147,10 +146,10 @@ Metadata:
 Parameters:
   BastionInstanceType:
     AllowedValues:
-    - t2.nano
-    - t3.nano
+    - t4g.nano
+    - t4g.micro
     ConstraintDescription: Must be a valid Amazon EC2 instance type.
-    Default: t3.nano
+    Default: t4g.nano
     Description: Bastion EC2 instance type.
     Type: String
   PublicAlbAcmCertificate:
