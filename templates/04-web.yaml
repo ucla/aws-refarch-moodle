@@ -883,6 +883,10 @@ Resources:
                 chown -R root:apache /var/www/moodle/html
                 chown -R apache:apache /var/www/moodle/local
 
+                echo "Creating Moodle user"
+                adduser -c "Moodle User" moodle
+                usermod -a -G apache moodle
+
               mode: 000500
               owner: root
               group: root
@@ -1055,7 +1059,7 @@ Resources:
             mkdir -p /var/www/moodle/local
 
             #Mount shared storage
-            mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 ${ElasticFileSystem}.efs.${AWS::Region}.amazonaws.com:/data /var/www/moodle/data
+            mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 ${ElasticFileSystem}.efs.${AWS::Region}.amazonaws.com:/moodle_data /var/www/moodle/data
             mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 ${ElasticFileSystem}.efs.${AWS::Region}.amazonaws.com:/cache /var/www/moodle/cache
             mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 ${ElasticFileSystem}.efs.${AWS::Region}.amazonaws.com:/temp /var/www/moodle/temp
 
