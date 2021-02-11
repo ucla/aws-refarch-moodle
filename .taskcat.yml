@@ -8,7 +8,6 @@ project:  # Project specific configuration section
     CloudFrontAcmCertificate: ''
     DatabaseCmk: 'arn:aws:kms:us-west-2:095974944794:key/dcd37fd9-8fbf-4342-81a8-548681df5ffa'
     DatabaseEncrpytedBoolean: 'true'
-    DatabaseInstanceType: 'db.r5.large'
     DeploymentBranchCommitTag: 'AWS-changes'
     DeploymentKey: 'arn:aws:secretsmanager:us-west-2:095974944794:secret:AWSCCLEDeploymentKey-WI4nl3'
     DomainName: ''
@@ -27,7 +26,6 @@ project:  # Project specific configuration section
     UseRoute53Boolean: 'false'
     UseSessionCacheBoolean: 'true'
     WebAsgMax: 4
-    WebInstanceType: t3.small
   regions: # List of AWS regions
     - us-west-2
   # Name of S3 bucket to upload project to
@@ -46,7 +44,7 @@ tests:  # Test definition section
     parameters:
       ApplicationCacheNodeType: cache.t3.micro
       CachePrefix: 'ccle-test'
-      DatabaseInstanceType: db.r5.large
+      DatabaseInstanceType: db.t3.small
       EfsGrowthInstanceType: t3.micro
       PrivateSubnets: 'subnet-01d8a7092b87ff57b,subnet-0d39c760e52360242'
       PublicSubnets: 'subnet-02fb2e17a34aa3552,subnet-07cf697d8edc81669'

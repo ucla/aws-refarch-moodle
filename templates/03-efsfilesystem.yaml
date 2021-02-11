@@ -373,10 +373,10 @@ Resources:
                 sudo mountpoint -q /$FILE_SYSTEM_ID || sudo mount -t nfs4 -o nfsvers=4.1,rsize=1048576,wsize=1048576,hard,timeo=600,retrans=2 $FILE_SYSTEM_ID.efs.$region.amazonaws.com:/ /$FILE_SYSTEM_ID
 
                 #Create directories for Moodle
-                sudo mkdir -p /$FILE_SYSTEM_ID/data
+                sudo mkdir -p /$FILE_SYSTEM_ID/moodle_data
                 sudo mkdir -p /$FILE_SYSTEM_ID/cache
                 sudo mkdir -p /$FILE_SYSTEM_ID/temp
-                chown apache:apache /$FILE_SYSTEM_ID/data/
+                chown apache:apache /$FILE_SYSTEM_ID/moodle_data/
                 chown apache:apache /$FILE_SYSTEM_ID/cache/
                 chown apache:apache /$FILE_SYSTEM_ID/temp/
 
