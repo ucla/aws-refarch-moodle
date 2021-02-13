@@ -164,8 +164,8 @@ Resources:
       Matcher:
         HttpCode: '200,303'
       Name: !Join [ '', [ 'PublicALB-', !Ref Vpc ] ]
-      Port: 80
-      Protocol: HTTP
+      Port: 443
+      Protocol: HTTPS
       Tags:
       - Key: Name
         Value: !Join [ '', [ 'Public ALB / ', !Ref 'AWS::StackName' ] ]

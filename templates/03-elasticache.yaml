@@ -13,6 +13,7 @@ Metadata:
         - ElastiCacheNodeType
         - ElastiCacheClusterName
         - ElastiCacheSecurityGroup
+        - ElastiCacheEngine
         - NumberOfSubnets
         - PreferredBackupWindow
         - PreferredMaintenanceWindow
@@ -24,6 +25,8 @@ Metadata:
         default: Cache Cluster Node Type
       ElastiCacheSecurityGroup:
         default: ElastiCache Security Group
+      ElastiCacheEngine:
+        default: redis
       NumberOfSubnets:
         default: Number of subnets
       PreferredBackupWindow:
@@ -63,6 +66,10 @@ Parameters:
   ElastiCacheSecurityGroup:
     Description: Select the ElastiCache security group.
     Type: AWS::EC2::SecurityGroup::Id
+  ElastiCacheEngine:
+    AllowedPattern: ^(redis|memcached)$
+    Description: Select ElasticCache Engine (redis or memcached)
+    Type: String
   NumberOfSubnets:
     AllowedValues:
     - 2
@@ -141,14 +148,35 @@ Conditions:
     - !Condition NumberOfSubnets5
     - !Condition NumberOfSubnets6
   Subnet5: !Condition NumberOfSubnets6
+  DeployMemcached:
+    !Equals [ 'memcached', !Ref ElastiCacheEngine ]
+  DeployRedis:
+    !Equals [ 'redis', !Ref ElastiCacheEngine ]
 
 Resources:
 
-  ElastiCacheCluster:
+  MemcachedElastiCacheCluster:
+    Condition: DeployMemcached
+    Type: AWS::ElastiCache::CacheCluster
+    Properties:
+      AZMode: cross-az
+      CacheNodeType: !Ref ElastiCacheNodeType
+      CacheSubnetGroupName: !Ref ElastiCacheSubnetGroup
+      ClusterName: !Ref ElastiCacheClusterName
+      Engine: memcached
+      NumCacheNodes:
+        !Ref NumberOfSubnets
+      Tags:
+        - Key: Name
+          Value: !Join [ '', [ 'Moodle / ', !Ref 'AWS::StackName' ] ]
+      VpcSecurityGroupIds:
+      - !Ref ElastiCacheSecurityGroup
+  RedisElastiCacheCluster:
+    Condition: DeployRedis
     Type: AWS::ElastiCache::ReplicationGroup
     Properties:
       ReplicationGroupId: !Ref ElastiCacheClusterName
-      ReplicationGroupDescription: 'Redis cache'
+      ReplicationGroupDescription: !Sub '${ElastiCacheClusterName} Redis cache'
       AtRestEncryptionEnabled: true
       TransitEncryptionEnabled: false # Must be false unless you implement AuthToken.
       AutoMinorVersionUpgrade: true
@@ -156,7 +184,7 @@ Resources:
       MultiAZEnabled: true
       CacheNodeType: !Ref ElastiCacheNodeType
       CacheSubnetGroupName: !Ref ElastiCacheSubnetGroup
-      Engine: redis
+      Engine: !Ref ElastiCacheEngine
       NumCacheClusters:
         !Ref NumberOfSubnets
       PreferredMaintenanceWindow: !Ref PreferredMaintenanceWindow
@@ -195,4 +223,8 @@ Resources:
           ]
 Outputs:
   ElastiCacheClusterEndpointAddress:
-    Value: !GetAtt ElastiCacheCluster.PrimaryEndPoint.Address
+    Value:
+      !If [ DeployRedis,
+        !GetAtt RedisElastiCacheCluster.PrimaryEndPoint.Address,
+      !If [ DeployMemcached,
+        !GetAtt MemcachedElastiCacheCluster.ConfigurationEndpoint.Address, '']]

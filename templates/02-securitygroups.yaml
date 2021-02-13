@@ -54,10 +54,21 @@ Resources:
       VpcId:
         !Ref Vpc
 
-  ElastiCacheSecurityGroup:
+  MemcachedElastiCacheSecurityGroup:
     Type: AWS::EC2::SecurityGroup
     Properties:
-      GroupDescription: Security group for ElastiCache cache cluster
+      GroupDescription: Memcached Security group for ElastiCache cache cluster
+      SecurityGroupIngress:
+        - IpProtocol: tcp
+          FromPort: 11211
+          ToPort: 11211
+          SourceSecurityGroupId: !Ref WebSecurityGroup
+      VpcId:
+        !Ref Vpc
+  RedisElastiCacheSecurityGroup:
+    Type: AWS::EC2::SecurityGroup
+    Properties:
+      GroupDescription: Redis Security group for ElastiCache cache cluster
       SecurityGroupIngress:
         - IpProtocol: tcp
           FromPort: 6379
@@ -131,9 +142,11 @@ Outputs:
     Value: !Ref DatabaseSecurityGroup
   EfsSecurityGroup:
     Value: !Ref EfsSecurityGroup
-  ElastiCacheSecurityGroup:
-    Value: !Ref ElastiCacheSecurityGroup
+  MemcachedElastiCacheSecurityGroup:
+    Value: !Ref MemcachedElastiCacheSecurityGroup
   PublicAlbSecurityGroup:
     Value: !Ref PublicAlbSecurityGroup
+  RedisElastiCacheSecurityGroup:
+    Value: !Ref RedisElastiCacheSecurityGroup
   WebSecurityGroup:
     Value: !Ref WebSecurityGroup
