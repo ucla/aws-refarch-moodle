@@ -20,6 +20,8 @@ project:  # Project specific configuration section
     PreferredBackupWindow: '09:00-10:59'
     PreferredMaintenanceWindow: 'sun:11:00-sun:13:00'
     PublicAlbAcmCertificate: ''
+    ShibbolethCertificate: 'arn:aws:secretsmanager:us-west-2:095974944794:secret:Shib-self-signed-cert-pilot.ccle.ucla.edu-tbkhkx'
+    ShibbolethKey: 'arn:aws:secretsmanager:us-west-2:095974944794:secret:Shib-private-key-pilot.ccle.ucla.edu-5yNZIL'
     UseRoute53Boolean: false
     UseApplicationCacheBoolean: 'true'
     UseCloudFrontBoolean: 'true'
@@ -48,6 +50,7 @@ tests:  # Test definition section
       EfsGrowthInstanceType: t3.micro
       PrivateSubnets: 'subnet-01d8a7092b87ff57b,subnet-0d39c760e52360242'
       PublicSubnets: 'subnet-02fb2e17a34aa3552,subnet-07cf697d8edc81669'
+      ShibbolethCacheNodeType: cache.t3.micro
       TemplateSource: '-test'
       UseApplicationCacheBoolean: 'false'
       UseSessionCacheBoolean: 'false'

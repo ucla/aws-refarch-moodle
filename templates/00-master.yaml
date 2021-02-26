@@ -68,6 +68,12 @@ Metadata:
         - DeploymentKey
         - DeploymentBranchCommitTag
         - Environment
+    - Label:
+        default: Shibboleth
+      Parameters:
+        - ShibbolethCacheNodeType
+        - ShibbolethCertificate
+        - ShibbolethKey
     ParameterLabels:
       BastionInstanceType:
         default: Bastion Instance Type
@@ -141,7 +147,12 @@ Metadata:
         default: Use Route 53
       UseCloudFrontBoolean:
         default: Use Cloud Front
-
+      ShibbolethCacheNodeType:
+        default: Shibboleth Cache Node Type
+      ShibbolethCertificate:
+        default: Shibboleth Certificate ARN
+      ShibbolethKey:
+        default: Shibboleth Private Key ARN
 
 Parameters:
   BastionInstanceType:
@@ -217,7 +228,7 @@ Parameters:
     Description: The branch or commit id or tag to run on the EC2 instances
     Type: String
   DeploymentKey:
-    AllowedPattern: ^$|(arn:aws:secretsmanager:)([a-zA-Z0-9:-])*$
+    AllowedPattern: ^$|(arn:aws:secretsmanager:)([a-zA-Z0-9:.-])*$
     Description: 'The Secret Manager ARN for the private SSH key used for read-only deployments'
     Type: String
   Environment:
@@ -505,6 +516,35 @@ Parameters:
       (mon|tue|wed|thu|fri|sat|sun):\d{2}:\d{2}-(mon|tue|wed|thu|fri|sat|sun):\d{2}:\d{2}
     ConstraintDescription: >-
       Must be a valid timestamp range with day of week, for example sun:11:00-sun:13:00
+  ShibbolethCacheNodeType:
+    AllowedValues:
+      - cache.t3.micro
+      - cache.t3.small
+      - cache.t3.medium
+      - cache.m6g.large
+      - cache.m6g.xlarge
+      - cache.m6g.2xlarge
+      - cache.m6g.4xlarge
+      - cache.m6g.8xlarge
+      - cache.m6g.16xlarge
+      - cache.r6g.large
+      - cache.r6g.xlarge
+      - cache.r6g.2xlarge
+      - cache.r6g.4xlarge
+      - cache.r6g.8xlarge
+      - cache.r6g.16xlarge
+    ConstraintDescription: Must be a valid Amazon ElastiCache node type.
+    Default: cache.t3.micro
+    Description: The Amazon ElastiCache cluster node type.
+    Type: String
+  ShibbolethCertificate:
+    AllowedPattern: ^$|(arn:aws:secretsmanager:)([a-zA-Z0-9:.-])*$
+    Description: 'The Secret Manager ARN for the private SSH key used for Shibboleth'
+    Type: String
+  ShibbolethKey:
+    AllowedPattern: ^$|(arn:aws:secretsmanager:)([a-zA-Z0-9:.-])*$
+    Description: 'The Secret Manager ARN for the signed certificate for Shibboleth'
+    Type: String
 
 Conditions:
   DeployWithoutSessionCache:
@@ -517,6 +557,8 @@ Conditions:
     !Equals [ true, !Ref UseRoute53Boolean ]
   DeployCloudFront:
     !Equals [ true, !Ref UseCloudFrontBoolean ]
+  NoDomainName:
+    !Equals [ '', !Ref DomainName ]
 
 Resources:
   MyRDSInstanceSecret:
@@ -650,7 +692,8 @@ Resources:
         ElastiCacheNodeType:
           !Ref SessionCacheNodeType
         ElastiCacheSecurityGroup:
-          !GetAtt [ securitygroups, Outputs.ElastiCacheSecurityGroup ]
+          !GetAtt [ securitygroups, Outputs.RedisElastiCacheSecurityGroup ]
+        ElastiCacheEngine: redis
         NumberOfSubnets:
           !Ref NumberOfAZs
         PreferredBackupWindow:
@@ -671,7 +714,8 @@ Resources:
         ElastiCacheNodeType:
           !Ref ApplicationCacheNodeType
         ElastiCacheSecurityGroup:
-          !GetAtt [ securitygroups, Outputs.ElastiCacheSecurityGroup ]
+          !GetAtt [ securitygroups, Outputs.RedisElastiCacheSecurityGroup ]
+        ElastiCacheEngine: redis
         NumberOfSubnets:
           !Ref NumberOfAZs
         PreferredBackupWindow:
@@ -679,8 +723,30 @@ Resources:
         PreferredMaintenanceWindow:
           !Ref PreferredMaintenanceWindow
       TemplateURL: !Sub https://cat-ccle-aws-refarch-moodle${TemplateSource}.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/03-elasticache.yaml
+  shibbolethcache:
+    DependsOn: securitygroups
+    Type: AWS::CloudFormation::Stack
+    Properties:
+      Parameters:
+        Subnet:
+          !Join [',', !Ref PrivateSubnets]
+        ElastiCacheClusterName:
+          !Sub '${CachePrefix}shibboleth'
+        ElastiCacheNodeType:
+          !Ref ShibbolethCacheNodeType
+        ElastiCacheSecurityGroup:
+          !GetAtt [ securitygroups, Outputs.MemcachedElastiCacheSecurityGroup ]
+        ElastiCacheEngine: memcached
+        NumberOfSubnets:
+          !Ref NumberOfAZs
+        PreferredBackupWindow:
+          !Ref PreferredBackupWindow
+        PreferredMaintenanceWindow:
+          !Ref PreferredMaintenanceWindow
+      TemplateURL: !Sub https://cat-ccle-aws-refarch-moodle${TemplateSource}.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/03-elasticache.yaml
+
   webnocache:
-    DependsOn: [ publicalb, rds, efsfilesystem ]
+    DependsOn: [ publicalb, rds, efsfilesystem, shibbolethcache ]
     Condition: DeployWithoutSessionCache
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -731,13 +797,21 @@ Resources:
           !Join [',', !Ref PrivateSubnets]
         DomainName:
           !Ref DomainName
+        ServerUrl:
+          !If [ NoDomainName, !GetAtt [ publicalb, Outputs.PublicAlbHostname ], !Sub 'https://${DomainName}' ]
         SessionElastiCacheClusterEndpointAddress:
           ''
         ApplicationElastiCacheClusterEndpointAddress:
           !If [DeployApplicationCache, !GetAtt applicationcache.Outputs.ElastiCacheClusterEndpointAddress, '']
+        ShibbolethElastiCacheClusterEndpointAddress:
+          !GetAtt shibbolethcache.Outputs.ElastiCacheClusterEndpointAddress
+        ShibbolethCertificate:
+          !Ref ShibbolethCertificate
+        ShibbolethKey:
+          !Ref ShibbolethKey
       TemplateURL: !Sub https://cat-ccle-aws-refarch-moodle${TemplateSource}.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/04-web.yaml
   webcached:
-    DependsOn: [ publicalb, rds, efsfilesystem, sessioncache ]
+    DependsOn: [ publicalb, rds, efsfilesystem, sessioncache, shibbolethcache ]
     Condition: DeployWithSessionCache
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -788,10 +862,18 @@ Resources:
           !Join [',', !Ref PrivateSubnets]
         DomainName:
           !Ref DomainName
+        ServerUrl:
+          !If [ NoDomainName, Outputs.PublicAlbHostname, !Sub 'https://${DomainName}' ]
         SessionElastiCacheClusterEndpointAddress:
           !GetAtt sessioncache.Outputs.ElastiCacheClusterEndpointAddress
         ApplicationElastiCacheClusterEndpointAddress:
           !If [DeployApplicationCache, !GetAtt applicationcache.Outputs.ElastiCacheClusterEndpointAddress, '']
+        ShibbolethElastiCacheClusterEndpointAddress:
+          !GetAtt shibbolethcache.Outputs.ElastiCacheClusterEndpointAddress
+        ShibbolethCertificate:
+          !Ref ShibbolethCertificate
+        ShibbolethKey:
+          !Ref ShibbolethKey
       TemplateURL: !Sub https://cat-ccle-aws-refarch-moodle${TemplateSource}.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/04-web.yaml
   cloudfront:
     Condition: DeployCloudFront
