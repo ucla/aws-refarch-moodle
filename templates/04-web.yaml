@@ -869,6 +869,7 @@ Resources:
                   }
 
                   // Setup Shibboleth.
+                  $CFG->alternateloginurl = $CFG->wwwroot . '/login/ucla_login.php?shibboleth';
                   $CFG->forced_plugin_settings['auth_shibboleth']['convert_data'] = '/var/www/moodle/html/shib_transform.php';
                   $CFG->forced_plugin_settings['auth_shibboleth']['logout_handler'] = $CFG->wwwroot . '/Shibboleth.sso/Logout';
                   $CFG->forced_plugin_settings['auth_shibboleth']['logout_return_url'] =
