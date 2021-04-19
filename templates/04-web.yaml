@@ -503,7 +503,7 @@ Resources:
               content: !Sub |
                 #!/bin/bash -xe
                 amazon-linux-extras install -y php7.3
-                yum install -y awslogs httpd mysql php-gd php-soap php-intl php-mbstring php-xmlrpc php-zip php-pecl-mcrypt
+                yum install -y awslogs httpd mysql php-gd php-soap php-intl php-mbstring php-xmlrpc php-zip php-pecl-mcrypt php-bcmath
                 # Change memory limit to help with large backup/restore
                 sed -i 's/memory_limit =.*/memory_limit = 8192M/' /etc/php.ini
                 sed -i 's/max_execution_time =.*/max_execution_time = 300/' /etc/php.ini
