@@ -106,6 +106,12 @@ Resources:
       DefaultActions:
       - Type: forward
         TargetGroupArn: !Ref PublicAlbTargetGroup
+        ForwardConfig:
+          TargetGroups:
+            - TargetGroupArn: !Ref PublicAlbTargetGroup
+          TargetGroupStickinessConfig:
+            DurationSeconds: 14400  # 4 hours.
+            Enabled: true
       LoadBalancerArn: !Ref PublicApplicationLoadBalancer
       Port: 80
       Protocol: HTTP
@@ -118,6 +124,12 @@ Resources:
       DefaultActions:
       - Type: forward
         TargetGroupArn: !Ref PublicAlbTargetGroup
+        ForwardConfig:
+          TargetGroups:
+            - TargetGroupArn: !Ref PublicAlbTargetGroup
+          TargetGroupStickinessConfig:
+            DurationSeconds: 14400  # 4 hours.
+            Enabled: true
       LoadBalancerArn: !Ref PublicApplicationLoadBalancer
       Port: 443
       Protocol: HTTPS
