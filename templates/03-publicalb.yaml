@@ -169,6 +169,13 @@ Resources:
       Tags:
       - Key: Name
         Value: !Join [ '', [ 'Public ALB / ', !Ref 'AWS::StackName' ] ]
+      TargetGroupAttributes:
+      - Key: stickiness.enabled
+        Value: 'true'
+      - Key: stickiness.type
+        Value: lb_cookie
+      - Key: stickiness.lb_cookie.duration_seconds
+        Value: '14400'  # 4 hours
       UnhealthyThresholdCount: 5
       VpcId: !Ref Vpc
 
