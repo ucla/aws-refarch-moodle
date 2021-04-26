@@ -1094,6 +1094,11 @@ Resources:
               content: !Sub |
                 #!/bin/bash -xe
 
+                if ${ShibbolethElastiCacheClusterEndpointAddress}; then
+                  echo "UseShibbolethBoolean set to false; skipping Shibboleth install"
+                  exit
+                fi
+
                 curl -o /etc/yum.repos.d/shibboleth.repo http://download.opensuse.org/repositories/security://shibboleth/CentOS_7/security:shibboleth.repo
                 yum install -y shibboleth
 

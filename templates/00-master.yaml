@@ -610,7 +610,10 @@ Parameters:
       - cache.r6g.16xlarge
     ConstraintDescription: Must be a valid Amazon ElastiCache node type.
     Default: cache.t3.micro
-    Description: The Amazon ElastiCache cluster node type.
+    Description: >-
+      The Amazon ElastiCache cluster node type. NOTE - To change instance type,
+      must first set UseShibbolethBoolean to false to delete instance and then
+      to true to recreate it.
     Type: String
   ShibbolethCertificate:
     AllowedPattern: ^$|(arn:aws:secretsmanager:)([a-zA-Z0-9:.-])*$
@@ -619,6 +622,13 @@ Parameters:
   ShibbolethKey:
     AllowedPattern: ^$|(arn:aws:secretsmanager:)([a-zA-Z0-9:.-])*$
     Description: 'The Secret Manager ARN for the signed certificate for Shibboleth'
+    Type: String
+  UseShibbolethBoolean:
+    AllowedValues:
+      - true
+      - false
+    Default: false
+    Description: Specifies whether Shibboleth should be setup.
     Type: String
 
 Conditions:
@@ -634,6 +644,8 @@ Conditions:
     !Equals [ true, !Ref UseRoute53Boolean ]
   DeployCloudFront:
     !Equals [ true, !Ref UseCloudFrontBoolean ]
+  DeployShibboleth:
+    !Equals [ true, !Ref UseShibbolethBoolean ]
   NoDomainName:
     !Equals [ '', !Ref DomainName ]
 
@@ -801,7 +813,7 @@ Resources:
           !Ref PreferredMaintenanceWindow
       TemplateURL: !Sub https://cat-ccle-aws-refarch-moodle${TemplateSource}.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/03-elasticache.yaml
   shibbolethcache:
-    DependsOn: securitygroups
+    Condition: DeployShibboleth
     Type: AWS::CloudFormation::Stack
     Properties:
       Parameters:
@@ -823,7 +835,7 @@ Resources:
       TemplateURL: !Sub https://cat-ccle-aws-refarch-moodle${TemplateSource}.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/03-elasticache.yaml
 
   webnocache:
-    DependsOn: [ publicalb, rds, efsfilesystem, shibbolethcache ]
+    DependsOn: [ publicalb, rds, efsfilesystem ]
     Condition: DeployWithoutSessionCache
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -881,14 +893,14 @@ Resources:
         ApplicationElastiCacheClusterEndpointAddress:
           !If [DeployApplicationCache, !GetAtt applicationcache.Outputs.ElastiCacheClusterEndpointAddress, '']
         ShibbolethElastiCacheClusterEndpointAddress:
-          !GetAtt shibbolethcache.Outputs.ElastiCacheClusterEndpointAddress
+          !If [DeployShibboleth, !GetAtt shibbolethcache.Outputs.ElastiCacheClusterEndpointAddress, '']
         ShibbolethCertificate:
           !Ref ShibbolethCertificate
         ShibbolethKey:
           !Ref ShibbolethKey
       TemplateURL: !Sub https://cat-ccle-aws-refarch-moodle${TemplateSource}.s3.us-west-2.amazonaws.com/aws-refarch-moodle/templates/04-web.yaml
   webcached:
-    DependsOn: [ publicalb, rds, efsfilesystem, sessioncache, shibbolethcache ]
+    DependsOn: [ publicalb, rds, efsfilesystem, sessioncache ]
     Condition: DeployWithSessionCache
     Type: AWS::CloudFormation::Stack
     Properties:
@@ -946,7 +958,7 @@ Resources:
         ApplicationElastiCacheClusterEndpointAddress:
           !If [DeployApplicationCache, !GetAtt applicationcache.Outputs.ElastiCacheClusterEndpointAddress, '']
         ShibbolethElastiCacheClusterEndpointAddress:
-          !GetAtt shibbolethcache.Outputs.ElastiCacheClusterEndpointAddress
+          !If [DeployShibboleth, !GetAtt shibbolethcache.Outputs.ElastiCacheClusterEndpointAddress, '']
         ShibbolethCertificate:
           !Ref ShibbolethCertificate
         ShibbolethKey:

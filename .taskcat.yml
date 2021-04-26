@@ -28,6 +28,7 @@ project:  # Project specific configuration section
     UseCronBoolean: 'true'
     UseRoute53Boolean: 'false'
     UseSessionCacheBoolean: 'true'
+    UseShibbolethBoolean: 'true'
     WebAsgMax: 4
   regions: # List of AWS regions
     - us-west-2
